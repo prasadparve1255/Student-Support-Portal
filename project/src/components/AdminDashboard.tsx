@@ -614,124 +614,62 @@ const AdminDashboard: React.FC = () => {
 
         {/* Content Based on Active Tab */}
         {activeTab === "complaints" ? (
-          /* Complaints List */
-          <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900">
-                Complaints ({filteredComplaints.length})
-              </h2>
-            </div>
-
+          <div className="space-y-4">
+            <h2 className="text-lg font-bold text-gray-800">
+              Complaints <span className="text-gray-400 font-normal">({filteredComplaints.length})</span>
+            </h2>
             {filteredComplaints.length === 0 ? (
-              <div className="p-12 text-center">
-                <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500 text-lg">No complaints found</p>
-                <p className="text-gray-400">
-                  Try adjusting your filters or search terms
-                </p>
+              <div className="bg-white rounded-2xl border border-gray-100 p-16 text-center">
+                <MessageSquare className="h-14 w-14 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500 text-lg font-medium">No complaints found</p>
+                <p className="text-gray-400 mt-1">Try adjusting your filters or search terms</p>
               </div>
             ) : (
               <>
-              <div className="divide-y divide-gray-200">
+              <div className="space-y-4">
                 {filteredComplaints.slice((complaintsPage - 1) * PER_PAGE, complaintsPage * PER_PAGE).map((complaint) => (
-                  <div
-                    key={complaint.id}
-                    className="p-6 hover:bg-gray-50 transition-colors duration-150"
+                  <div key={complaint.id}
+                    className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 hover:shadow-lg hover:border-blue-200 transition-all"
                   >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-3 mb-2">
-                          <h3 className="text-lg font-semibold text-gray-900">
-                            {complaint.subject}
-                          </h3>
-                          <span
-                            className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(complaint.status)}`}
-                          >
-                            {complaint.status}
+                    <div className="flex-1">
+                      <div className="flex items-center flex-wrap gap-3 mb-3">
+                        <h3 className="text-base font-bold text-gray-900">{complaint.subject}</h3>
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(complaint.status)}`}>
+                          {complaint.status}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-sm text-gray-500 mb-3">
+                        <span><span className="font-medium text-gray-700">Student:</span> {complaint.studentName} ({complaint.studentId})</span>
+                        <span><span className="font-medium text-gray-700">Dept:</span> {complaint.department}</span>
+                        <span><span className="font-medium text-gray-700">Category:</span> {complaint.category}</span>
+                        {(complaint as any).class && (
+                          <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">
+                            {(complaint as any).class}
                           </span>
-                          {/* <span className={`text-xs font-medium ${getPriorityColor(complaint.priority)}`}>
-                          {complaint.priority} Priority
-                        </span> */}
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
-                          <div>
-                            <p className="text-sm text-gray-600">
-                              <span className="font-medium">Student ID:</span> (
-                              {complaint.studentId})
-                            </p>
-                            <p className="text-sm text-gray-600">
-                              <span className="font-medium">Category:</span>{" "}
-                              {complaint.category}
-                            </p>
-                            <p className="text-sm text-gray-600">
-                              <span className="font-medium">Department:</span>{" "}
-                              {complaint.department}
-                            </p>
-                            {(complaint as any).class && (
-                              <p className="text-sm text-gray-600">
-                                <span className="font-medium">Class:</span>{" "}
-                                <span className="px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded text-xs font-medium">
-                                  {(complaint as any).class}
-                                </span>
-                              </p>
-                            )}
-                            {/* <p className="text-sm text-gray-600 flex items-center space-x-1">
-                            <Mail className="h-3 w-3" />
-                            <span className="font-medium">Email:</span> 
-                            <span>{complaint.studentEmail}</span>
-                          </p> */}
-                          </div>
-                        </div>
-
-                        <p className="text-gray-700 mb-3 line-clamp-2">
-                          {complaint.description}
-                        </p>
-
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-4 text-sm text-gray-500">
-                            <span className="flex items-center space-x-1">
-                              <Calendar className="h-4 w-4" />
-                              <span>
-                                Created:{" "}
-                                {new Date(
-                                  complaint.createdAt,
-                                ).toLocaleDateString()}
-                              </span>
-                            </span>
-                            {complaint.updatedAt !== complaint.createdAt && (
-                              <span className="flex items-center space-x-1">
-                                <Clock className="h-4 w-4" />
-                                <span>
-                                  Updated:{" "}
-                                  {new Date(
-                                    complaint.updatedAt,
-                                  ).toLocaleDateString()}
-                                </span>
-                              </span>
-                            )}
-                          </div>
-
-                          <button
-                            onClick={() => setSelectedComplaint(complaint)}
-                            className="flex items-center space-x-2 px-4 py-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors duration-150"
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span>Manage</span>
-                          </button>
-                        </div>
-
-                        {complaint.adminResponse && (
-                          <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                            <p className="text-sm font-medium text-blue-900 mb-1">
-                              Admin Response:
-                            </p>
-                            <p className="text-sm text-blue-800">
-                              {complaint.adminResponse}
-                            </p>
-                          </div>
                         )}
                       </div>
+                      <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed mb-4">{complaint.description}</p>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4 text-sm text-gray-400">
+                          <span className="flex items-center gap-1.5"><Calendar className="h-4 w-4" />{new Date(complaint.createdAt).toLocaleDateString()}</span>
+                          {complaint.updatedAt !== complaint.createdAt && (
+                            <span className="flex items-center gap-1.5"><Clock className="h-4 w-4" />Updated: {new Date(complaint.updatedAt).toLocaleDateString()}</span>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => setSelectedComplaint(complaint)}
+                          className="flex items-center space-x-2 px-5 py-2.5 bg-blue-600 text-white hover:bg-blue-700 rounded-xl transition-colors font-medium text-sm"
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span>Manage</span>
+                        </button>
+                      </div>
+                      {complaint.adminResponse && (
+                        <div className="mt-3 p-3 bg-blue-50 rounded-xl border border-blue-100">
+                          <p className="text-sm font-medium text-blue-800 mb-1">Admin Response:</p>
+                          <p className="text-sm text-blue-700 line-clamp-2">{complaint.adminResponse}</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -746,11 +684,10 @@ const AdminDashboard: React.FC = () => {
             )}
           </div>
         ) : activeTab === "students" ? (
-          /* Students List */
-          <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
             <div className="p-6 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900">
-                Students ({filteredStudents.length})
+              <h2 className="text-lg font-bold text-gray-800">
+                Students <span className="text-gray-400 font-normal">({filteredStudents.length})</span>
               </h2>
             </div>
 
