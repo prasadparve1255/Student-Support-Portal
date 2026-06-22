@@ -28,7 +28,7 @@ import DepartmentManagement from "./DepartmentManagement";
 import StudentCard from "./StudentCard";
 import ReportsModule from "./ReportsModule";
 import ClassManagement from "./ClassManagement";
-import { useClasses } from "../hooks/useClasses";
+import StudentRegistration from "./StudentRegistration";
 import Pagination from "./Pagination";
 
 const PER_PAGE = 10;
@@ -47,16 +47,7 @@ const AdminDashboard: React.FC = () => {
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
   const [adminResponse, setAdminResponse] = useState("");
   const [showRegisterModal, setShowRegisterModal] = useState(false);
-  const [newStudent, setNewStudent] = useState({
-    name: "",
-    email: "",
-    department: authState.currentAdmin?.department || "",
-    classId: "",
-    password: "",
-  });
-  const [registerClassRequired, setRegisterClassRequired] = useState(false);
   const [isBackingUp, setIsBackingUp] = useState(false);
-  const [registrationSuccess, setRegistrationSuccess] = useState("");
   const [activeTab, setActiveTab] = useState<
     "complaints" | "students" | "departments" | "reports" | "classes"
   >("complaints");
@@ -65,11 +56,8 @@ const AdminDashboard: React.FC = () => {
 
   // Department Admin च्या department चा _id — classes fetch साठी
   const adminDeptId = useMemo(() => {
-    const deptName = authState.currentAdmin?.isMainAdmin
-      ? newStudent.department
-      : authState.currentAdmin?.department;
-    return departments.find(d => d.name === deptName)?._id;
-  }, [departments, authState.currentAdmin, newStudent.department]);
+    return departments.find(d => d.name === authState.currentAdmin?.department)?._id;
+  }, [departments, authState.currentAdmin]);
 
   const { classes } = useClasses(adminDeptId);
 
@@ -266,66 +254,6 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  const handleRegisterStudent = async () => {
-    if (
-      !newStudent.name ||
-      !newStudent.email ||
-      !newStudent.department ||
-      !newStudent.password
-    ) {
-      setRegistrationSuccess("Please fill all fields");
-      return;
-    }
-    if (classes.length > 0 && !newStudent.classId) {
-      setRegisterClassRequired(true);
-      return;
-    }
-    setRegisterClassRequired(false);
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch("/api/students", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token && { Authorization: `Bearer ${token}` }),
-        },
-        body: JSON.stringify({
-          name: newStudent.name,
-          email: newStudent.email,
-          department: newStudent.department,
-          classId: newStudent.classId || undefined,
-          password: newStudent.password,
-        }),
-
-      });
-      const responseData = await response.json();
-      if (response.ok) {
-        setRegistrationSuccess(
-          `Student registered successfully with ID: ${responseData.studentId}`,
-        );
-        await refreshStudents();
-        setNewStudent({
-          name: "",
-          email: "",
-          department: authState.currentAdmin?.department || "",
-          classId: "",
-          password: "",
-        });
-        setTimeout(() => {
-          setRegistrationSuccess("");
-          setShowRegisterModal(false);
-          setActiveTab("students");
-        }, 2000);
-      } else {
-        setRegistrationSuccess(
-          responseData.message || "Error registering student",
-        );
-      }
-    } catch (error) {
-      const err = error as Error;
-      setRegistrationSuccess("Network error: " + err.message);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50">
@@ -1052,170 +980,10 @@ const AdminDashboard: React.FC = () => {
 
         {/* Student Registration Modal */}
         {showRegisterModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
-              <div className="p-6 border-b border-gray-200">
-                <h2 className="text-xl font-semibold text-gray-900">
-                  Register New Student
-                </h2>
-                <p className="text-gray-600">
-                  Students will be assigned department-specific IDs
-                </p>
-              </div>
-              <div className="p-6">
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Full Name
-                    </label>
-                    <input
-                      type="text"
-                      value={newStudent.name}
-                      onChange={(e) =>
-                        setNewStudent({ ...newStudent, name: e.target.value })
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Enter student's full name"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      value={newStudent.email}
-                      onChange={(e) =>
-                        setNewStudent({ ...newStudent, email: e.target.value })
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Enter student's email"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Department
-                    </label>
-                    <select
-                      value={newStudent.department}
-                      onChange={(e) =>
-                        setNewStudent({
-                          ...newStudent,
-                          department: e.target.value,
-                          classId: '', // department बदलल्यावर class reset
-                        })
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      {authState.currentAdmin?.isMainAdmin
-                        ? departments.map((dept) => (
-                            <option key={dept._id} value={dept.name}>
-                              {dept.name} ({dept.code})
-                            </option>
-                          ))
-                        : departments
-                            .filter(
-                              (dept) =>
-                                dept.name ===
-                                authState.currentAdmin?.department,
-                            )
-                            .map((dept) => (
-                              <option key={dept._id} value={dept.name}>
-                                {dept.name} ({dept.code})
-                              </option>
-                            ))}
-                    </select>
-                  </div>
-
-                  {/* Class Dropdown — required if classes exist */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Class {classes.length > 0 && <span className="text-red-500">*</span>}
-                    </label>
-                    {classes.length > 0 ? (
-                      <>
-                        <select
-                          value={newStudent.classId}
-                          onChange={(e) => {
-                            setNewStudent({ ...newStudent, classId: e.target.value });
-                            setRegisterClassRequired(false);
-                          }}
-                          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                            registerClassRequired ? 'border-red-400 bg-red-50' : 'border-gray-300'
-                          }`}
-                        >
-                          <option value="">-- Select Class --</option>
-                          {classes.map((c) => (
-                            <option key={c._id} value={c._id}>{c.name}</option>
-                          ))}
-                        </select>
-                        {registerClassRequired && (
-                          <p className="text-red-500 text-xs mt-1">⚠ Class select करणे आवश्यक आहे</p>
-                        )}
-                      </>
-                    ) : (
-                      <p className="text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-                        ⚠ या department साठी अजून कोणतीही class तयार केलेली नाही. आधी Classes tab मधून class add करा.
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Password
-                    </label>
-                    <input
-                      type="password"
-                      value={newStudent.password}
-                      onChange={(e) =>
-                        setNewStudent({
-                          ...newStudent,
-                          password: e.target.value,
-                        })
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Enter password"
-                    />
-                  </div>
-                </div>
-
-                {registrationSuccess && (
-                  <div
-                    className={`mt-4 p-3 rounded-lg ${registrationSuccess.includes("successfully") ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800"}`}
-                  >
-                    {registrationSuccess}
-                  </div>
-                )}
-
-                <div className="mt-6 flex space-x-3">
-                  <button
-                    onClick={handleRegisterStudent}
-                    className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors duration-150"
-                  >
-                    Register Student
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowRegisterModal(false);
-                      setRegistrationSuccess("");
-                      setNewStudent({
-                        name: "",
-                        email: "",
-                        department: "",
-                        classId: "",
-                        password: "",
-                      });
-                    }}
-                    className="flex-1 bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors duration-150"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+          <StudentRegistration
+            onClose={() => setShowRegisterModal(false)}
+            onSuccess={refreshStudents}
+          />
         )}
       </div>
     </div>
