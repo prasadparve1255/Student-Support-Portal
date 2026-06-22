@@ -23,6 +23,7 @@ import { useComplaints } from "../hooks/useComplaints";
 import { useAuthContext as useAuth } from "../context/AuthContext";
 import { useStudents } from "../hooks/useStudents";
 import { useDepartments } from "../hooks/useDepartments";
+import { useClasses } from "../hooks/useClasses";
 import { Complaint, ComplaintStats } from "../types/complaint";
 import DepartmentManagement from "./DepartmentManagement";
 import StudentCard from "./StudentCard";
@@ -38,6 +39,8 @@ const AdminDashboard: React.FC = () => {
   const { authState, logout } = useAuth();
   const { students, refreshStudents } = useStudents();
   const { departments } = useDepartments();
+  const adminDeptId = departments.find(d => d.name === authState.currentAdmin?.department)?._id;
+  const { classes } = useClasses(adminDeptId);
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -435,12 +438,28 @@ const AdminDashboard: React.FC = () => {
               <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Classes</p>
-                    <p className="text-2xl font-bold text-purple-600">—</p>
+                    <p className="text-sm font-medium text-gray-600">Total Classes</p>
+                    <p className="text-2xl font-bold text-purple-600">{classes.length}</p>
                   </div>
                   <GraduationCap className="h-8 w-8 text-purple-600" />
                 </div>
               </div>
+              {classes.slice(0, 4).map((c) => (
+                <div key={c._id} className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600 truncate max-w-[100px]">{c.name}</p>
+                      <p className="text-2xl font-bold text-purple-600">
+                        {students.filter(s => {
+                          const sc = typeof (s as any).class === 'object' ? (s as any).class?.name : (s as any).class;
+                          return sc === c.name;
+                        }).length}
+                      </p>
+                    </div>
+                    <GraduationCap className="h-8 w-8 text-purple-400" />
+                  </div>
+                </div>
+              ))}
             </>
           ) : activeTab === "reports" ? (
             <></>
