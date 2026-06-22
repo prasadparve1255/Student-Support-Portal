@@ -65,17 +65,10 @@ export const useDepartments = (): DepartmentHook => {
 
     const createDepartment = async (data: Omit<Department, '_id'>) => {
         try {
-            try {
-                await axios.post(`${API_BASE}/departments`, data, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-            } catch (apiErr) {
-                // Mock successful creation with a new ID
-                const newDept = { ...data, _id: Date.now().toString() };
-                setDepartments([...departments, newDept]);
-                return;
-            }
-            await fetchDepartments();
+            const res = await axios.post(`${API_BASE}/departments`, data, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setDepartments(prev => [...prev, res.data.department || res.data]);
         } catch (err) {
             setError('Error creating department');
             throw err;
@@ -84,18 +77,10 @@ export const useDepartments = (): DepartmentHook => {
 
     const updateDepartment = async (id: string, data: Partial<Department>) => {
         try {
-            try {
-                await axios.put(`${API_BASE}/departments/${id}`, data, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-            } catch (apiErr) {
-                // Mock update in local state
-                setDepartments(departments.map(dept => 
-                    dept._id === id ? { ...dept, ...data } : dept
-                ));
-                return;
-            }
-            await fetchDepartments();
+            const res = await axios.put(`${API_BASE}/departments/${id}`, data, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setDepartments(prev => prev.map(d => d._id === id ? { ...d, ...res.data } : d));
         } catch (err) {
             setError('Error updating department');
             throw err;
@@ -104,16 +89,10 @@ export const useDepartments = (): DepartmentHook => {
 
     const deleteDepartment = async (id: string) => {
         try {
-            try {
-                await axios.delete(`${API_BASE}/departments/${id}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-            } catch (apiErr) {
-                // Mock delete in local state
-                setDepartments(departments.filter(dept => dept._id !== id));
-                return;
-            }
-            await fetchDepartments();
+            await axios.delete(`${API_BASE}/departments/${id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setDepartments(prev => prev.filter(d => d._id !== id));
         } catch (err) {
             setError('Error deleting department');
             throw err;

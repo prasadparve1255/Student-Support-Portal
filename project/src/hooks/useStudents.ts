@@ -116,57 +116,29 @@ export const useStudents = (): StudentHook => {
 
     const updateStudent = async (id: string, data: Partial<Student>) => {
         try {
-            if (!token || token.startsWith('demo-token')) {
-                // Fallback to localStorage
-                const localStudents = JSON.parse(localStorage.getItem('students') || '[]');
-                const studentIndex = localStudents.findIndex((s: any) => s.id === id);
-                if (studentIndex !== -1) {
-                    localStudents[studentIndex] = { ...localStudents[studentIndex], ...data };
-                    localStorage.setItem('students', JSON.stringify(localStudents));
-                }
-                await fetchStudents();
-                return;
-            }
-            
-            await axios.put(`${API_BASE}/students/${id}`, data, {
+            const res = await axios.put(`${API_BASE}/students/${id}`, data, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            await fetchStudents();
+            // Optimistic update
+            setStudents(prev => prev.map(s => s._id === id ? { ...s, ...res.data } : s));
         } catch (err: any) {
-            // Fallback to localStorage on API error
-            console.warn('API update failed, falling back to localStorage:', err.message);
-            const localStudents = JSON.parse(localStorage.getItem('students') || '[]');
-            const studentIndex = localStudents.findIndex((s: any) => s.id === id);
-            if (studentIndex !== -1) {
-                localStudents[studentIndex] = { ...localStudents[studentIndex], ...data };
-                localStorage.setItem('students', JSON.stringify(localStudents));
-            }
-            await fetchStudents();
+            const errorMsg = err.response?.data?.message || 'Error updating student';
+            setError(errorMsg);
+            throw new Error(errorMsg);
         }
     };
 
     const deleteStudent = async (id: string) => {
         try {
-            if (!token || token.startsWith('demo-token')) {
-                // Fallback to localStorage
-                const localStudents = JSON.parse(localStorage.getItem('students') || '[]');
-                const filteredStudents = localStudents.filter((s: any) => s.id !== id);
-                localStorage.setItem('students', JSON.stringify(filteredStudents));
-                await fetchStudents();
-                return;
-            }
-            
             await axios.delete(`${API_BASE}/students/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            await fetchStudents();
+            // Optimistic update — lagar UI madhun remove kar
+            setStudents(prev => prev.filter(s => s._id !== id));
         } catch (err: any) {
-            // Fallback to localStorage on API error
-            console.warn('API delete failed, falling back to localStorage:', err.message);
-            const localStudents = JSON.parse(localStorage.getItem('students') || '[]');
-            const filteredStudents = localStudents.filter((s: any) => s.id !== id);
-            localStorage.setItem('students', JSON.stringify(filteredStudents));
-            await fetchStudents();
+            const errorMsg = err.response?.data?.message || 'Error deleting student';
+            setError(errorMsg);
+            throw new Error(errorMsg);
         }
     };
 

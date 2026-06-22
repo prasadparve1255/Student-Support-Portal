@@ -40,22 +40,25 @@ export const useClasses = (departmentId?: string) => {
     const res = await axios.post(`${API_BASE}/classes`, data, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    await fetchClasses();
+    // Optimistic add
+    setClasses(prev => [...prev, res.data]);
     return res.data;
   };
 
   const updateClass = async (id: string, data: { name?: string; description?: string }) => {
-    await axios.put(`${API_BASE}/classes/${id}`, data, {
+    const res = await axios.put(`${API_BASE}/classes/${id}`, data, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    await fetchClasses();
+    // Optimistic update
+    setClasses(prev => prev.map(c => c._id === id ? { ...c, ...res.data } : c));
   };
 
   const deleteClass = async (id: string) => {
     await axios.delete(`${API_BASE}/classes/${id}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    await fetchClasses();
+    // Optimistic remove
+    setClasses(prev => prev.filter(c => c._id !== id));
   };
 
   return { classes, loading, error, fetchClasses, createClass, updateClass, deleteClass };
