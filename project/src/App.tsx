@@ -27,7 +27,8 @@ const App: React.FC = () => {
   const [needsSetup, setNeedsSetup] = useState<boolean | null>(null);
 
   useEffect(() => {
-    fetch('/api/auth/setup/check')
+    const api = import.meta.env.VITE_API_BASE_URL || '/api';
+    fetch(`${api}/auth/setup/check`)
       .then(r => r.json())
       .then(data => setNeedsSetup(data.needsSetup))
       .catch(() => setNeedsSetup(false));

@@ -13,7 +13,8 @@ const SetupPage: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('/api/auth/setup', {
+      const api = import.meta.env.VITE_API_BASE_URL || '/api';
+      const res = await fetch(`${api}/setup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),

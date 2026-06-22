@@ -1,6 +1,8 @@
 import { useState, useCallback } from 'react';
 import { Student, AuthState, Admin } from '../types/auth';
 
+const API = import.meta.env.VITE_API_BASE_URL || '/api';
+
 const STUDENTS_KEY = 'students';
 const ADMINS_KEY = 'admins';
 const AUTH_KEY = 'auth_state';
@@ -108,7 +110,7 @@ export const useAuth = () => {
 
   const loginStudent = useCallback(async (studentId: string, password: string): Promise<boolean> => {
     try {
-      const response = await fetch('/api/auth/student/login', {
+      const response = await fetch(`${API}/auth/student/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ studentId, password }),
@@ -140,7 +142,7 @@ export const useAuth = () => {
 
   const loginAdmin = useCallback(async (username: string, password: string): Promise<boolean> => {
     try {
-      const response = await fetch('/api/auth/admin/login', {
+      const response = await fetch(`${API}/auth/admin/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
