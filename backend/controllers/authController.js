@@ -3,6 +3,39 @@ const bcrypt = require("bcryptjs");
 const Admin = require("../models/Admin");
 const Student = require("../models/Student");
 
+// Check if setup is needed (no admin exists)
+exports.checkSetup = async (req, res) => {
+  try {
+    const adminCount = await Admin.countDocuments();
+    res.json({ needsSetup: adminCount === 0 });
+  } catch (error) {
+    res.status(500).json({ message: 'Setup check failed' });
+  }
+};
+
+// Create first Main Admin (only works if no admin exists)
+exports.setupAdmin = async (req, res) => {
+  try {
+    const adminCount = await Admin.countDocuments();
+    if (adminCount > 0) {
+      return res.status(403).json({ message: 'Setup already complete' });
+    }
+    const { name, username, email, password } = req.body;
+    if (!name || !username || !email || !password) {
+      return res.status(400).json({ message: 'All fields are required' });
+    }
+    const admin = new Admin({
+      name, username, email, password,
+      isMainAdmin: true,
+      role: 'MAIN_ADMIN'
+    });
+    await admin.save();
+    res.status(201).json({ message: 'Main Admin created successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Setup failed', error: error.message });
+  }
+};
+
 // Generate JWT token
 const generateToken = (id, role, isMainAdmin = false, department = null) => {
   return jwt.sign(
