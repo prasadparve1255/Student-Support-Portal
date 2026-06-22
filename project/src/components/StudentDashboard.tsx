@@ -236,76 +236,79 @@ const StudentDashboard: React.FC = () => {
 
       {/* Sticky Navbar */}
       <div className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
-        <div className="max-w-5xl mx-auto px-4 py-3">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <img src="/logo.svg" alt="logo" className="h-9 w-9 shrink-0" />
+            <div className="flex items-center space-x-4">
+              <img src="/logo.svg" alt="logo" className="h-11 w-11 shrink-0" />
               <div>
-                <h1 className="text-sm sm:text-base font-bold text-gray-900 leading-tight">
+                <h1 className="text-base sm:text-xl font-bold text-gray-900 leading-tight">
                   Welcome, {authState.currentStudent.name}
                 </h1>
-                <div className="flex items-center flex-wrap gap-1.5 mt-0.5">
-                  <span className="text-xs text-gray-500 font-mono">{authState.currentStudent.id}</span>
+                <div className="flex items-center flex-wrap gap-2 mt-1">
+                  <span className="text-sm text-gray-500 font-mono">ID: {authState.currentStudent.id}</span>
                   {authState.currentStudent.class && (
-                    <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
+                    <span className="px-2.5 py-0.5 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">
                       {authState.currentStudent.class}
                     </span>
                   )}
                   {authState.currentStudent.department && (
-                    <span className="hidden sm:inline px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                    <span className="hidden sm:inline px-2.5 py-0.5 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
                       {authState.currentStudent.department}
                     </span>
                   )}
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-1 sm:gap-2">
+            <div className="flex items-center gap-2">
               {notifications.length > 0 && (
                 <button
                   onClick={() => { setSelectedComplaint(notifications[0]); setCurrentView('view-complaint'); }}
-                  className="relative flex items-center px-2.5 py-2 bg-red-100 text-red-600 hover:bg-red-200 rounded-lg transition-colors text-xs font-semibold"
+                  className="relative flex items-center px-3 py-2 bg-red-100 text-red-600 hover:bg-red-200 rounded-lg transition-colors text-sm font-semibold"
                 >
                   <span className="animate-pulse hidden sm:inline">Updates ({notifications.length})</span>
-                  <span className="sm:hidden">🔔</span>
-                  <span className="sm:hidden absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">{notifications.length}</span>
+                  <span className="sm:hidden">🔔 {notifications.length}</span>
                 </button>
               )}
               <button onClick={() => setCurrentView('new-complaint')}
-                className="flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg text-xs sm:text-sm font-medium hover:opacity-90 transition-all">
+                className="flex items-center space-x-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-all shadow-md">
                 <Plus className="h-4 w-4 shrink-0" />
                 <span className="hidden sm:inline">New Complaint</span>
+                <span className="sm:hidden">New</span>
               </button>
               <button onClick={() => setCurrentView('history')}
-                className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors" title="History">
-                <FileText className="h-4 w-4" />
+                className="flex items-center space-x-1.5 px-3 py-2.5 text-gray-600 hover:bg-gray-100 rounded-xl transition-colors text-sm font-medium" title="History">
+                <FileText className="h-5 w-5" />
+                <span className="hidden sm:inline">History</span>
               </button>
               <button onClick={() => navigate('/profile')}
-                className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors" title="Profile">
-                <UserCircle className="h-4 w-4" />
+                className="flex items-center space-x-1.5 px-3 py-2.5 text-gray-600 hover:bg-gray-100 rounded-xl transition-colors text-sm font-medium" title="Profile">
+                <UserCircle className="h-5 w-5" />
+                <span className="hidden sm:inline">Profile</span>
               </button>
               <button onClick={logout}
-                className="p-2 text-red-400 hover:bg-red-50 rounded-lg transition-colors" title="Logout">
-                <LogOut className="h-4 w-4" />
+                className="flex items-center space-x-1.5 px-3 py-2.5 text-red-500 hover:bg-red-50 rounded-xl transition-colors text-sm font-medium" title="Logout">
+                <LogOut className="h-5 w-5" />
+                <span className="hidden sm:inline">Logout</span>
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-8">
 
         {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
-            { label: 'Total', value: stats.total, color: 'text-gray-900', bg: 'bg-white', icon: <FileText className="h-6 w-6 text-gray-400" /> },
-            { label: 'Pending', value: stats.pending, color: 'text-orange-600', bg: 'bg-orange-50', icon: <Clock className="h-6 w-6 text-orange-400" /> },
-            { label: 'In Progress', value: stats.inProgress, color: 'text-blue-600', bg: 'bg-blue-50', icon: <TrendingUp className="h-6 w-6 text-blue-400" /> },
-            { label: 'Resolved', value: stats.resolved, color: 'text-green-600', bg: 'bg-green-50', icon: <CheckCircle className="h-6 w-6 text-green-400" /> },
+            { label: 'Total Complaints', value: stats.total, color: 'text-gray-900', bg: 'bg-white', icon: <FileText className="h-8 w-8 text-gray-400" /> },
+            { label: 'Pending', value: stats.pending, color: 'text-orange-600', bg: 'bg-orange-50', icon: <Clock className="h-8 w-8 text-orange-400" /> },
+            { label: 'In Progress', value: stats.inProgress, color: 'text-blue-600', bg: 'bg-blue-50', icon: <TrendingUp className="h-8 w-8 text-blue-400" /> },
+            { label: 'Resolved', value: stats.resolved, color: 'text-green-600', bg: 'bg-green-50', icon: <CheckCircle className="h-8 w-8 text-green-400" /> },
           ].map(s => (
-            <div key={s.label} className={`${s.bg} rounded-xl border border-gray-100 shadow-sm p-4 flex items-center justify-between`}>
+            <div key={s.label} className={`${s.bg} rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center justify-between`}>
               <div>
-                <p className="text-xs text-gray-500 font-medium">{s.label}</p>
-                <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
+                <p className="text-sm text-gray-500 font-medium mb-1">{s.label}</p>
+                <p className={`text-3xl font-bold ${s.color}`}>{s.value}</p>
               </div>
               {s.icon}
             </div>
@@ -314,13 +317,13 @@ const StudentDashboard: React.FC = () => {
 
         {/* New Complaint CTA — only when no complaints */}
         {studentComplaints.length === 0 && (
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-6 text-white text-center shadow-lg">
-            <div className="text-4xl mb-3">📝</div>
-            <h2 className="text-lg font-bold mb-1">Submit Your First Complaint</h2>
-            <p className="text-blue-100 text-sm mb-4">Have an issue? Let your department know. We'll get back to you.</p>
+          <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-10 text-white text-center shadow-lg">
+            <div className="text-5xl mb-4">📝</div>
+            <h2 className="text-2xl font-bold mb-2">Submit Your First Complaint</h2>
+            <p className="text-blue-100 text-base mb-6">Have an issue? Let your department know. We'll get back to you.</p>
             <button
               onClick={() => setCurrentView('new-complaint')}
-              className="bg-white text-blue-700 font-semibold px-6 py-2.5 rounded-xl hover:bg-blue-50 transition-colors text-sm"
+              className="bg-white text-blue-700 font-semibold px-8 py-3 rounded-xl hover:bg-blue-50 transition-colors text-base"
             >
               + New Complaint
             </button>
@@ -329,17 +332,17 @@ const StudentDashboard: React.FC = () => {
 
         {/* Search + Filter */}
         {studentComplaints.length > 0 && (
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input type="text" placeholder="Search complaints..." value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm shadow-sm" />
+                className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base shadow-sm" />
             </div>
             <div className="relative">
-              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Filter className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
               <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-                className="pl-9 pr-8 py-2.5 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none text-sm shadow-sm w-full sm:w-auto">
+                className="pl-11 pr-10 py-3 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none text-base shadow-sm w-full sm:w-48">
                 <option value="all">All Status</option>
                 <option value="Pending">Pending</option>
                 <option value="In Progress">In Progress</option>
@@ -352,66 +355,66 @@ const StudentDashboard: React.FC = () => {
         {/* Complaints List */}
         {studentComplaints.length > 0 && (
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-semibold text-gray-700">My Complaints ({filteredComplaints.length})</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-gray-800">My Complaints <span className="text-gray-400 font-normal text-base">({filteredComplaints.length})</span></h2>
             </div>
 
             {isLoading ? (
-              <div className="text-center py-16 bg-white rounded-2xl border border-gray-100">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto" />
-                <p className="text-gray-400 text-sm mt-3">Loading...</p>
+              <div className="text-center py-20 bg-white rounded-2xl border border-gray-100">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto" />
+                <p className="text-gray-400 mt-4">Loading...</p>
               </div>
             ) : filteredComplaints.length === 0 ? (
-              <div className="text-center py-16 bg-white rounded-2xl border border-gray-100">
-                <Search className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500 font-medium">No complaints match</p>
-                <p className="text-gray-400 text-sm mt-1">Try changing your search or filter</p>
+              <div className="text-center py-20 bg-white rounded-2xl border border-gray-100">
+                <Search className="h-14 w-14 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500 text-lg font-medium">No complaints match</p>
+                <p className="text-gray-400 mt-1">Try changing your search or filter</p>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {filteredComplaints.map(c => {
                   const sc = getStatusConfig(c.status);
                   return (
                     <div key={c.id}
                       onClick={() => { setSelectedComplaint(c); setCurrentView('view-complaint'); }}
-                      className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 cursor-pointer hover:shadow-md hover:border-blue-200 transition-all group">
-                      <div className="flex items-start justify-between gap-3">
+                      className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 cursor-pointer hover:shadow-lg hover:border-blue-300 transition-all group">
+                      <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">
                           {/* Title + badges */}
-                          <div className="flex items-center flex-wrap gap-2 mb-1.5">
-                            <h3 className="text-sm font-semibold text-gray-900 truncate">{c.subject}</h3>
-                            <span className={`flex items-center space-x-1 px-2 py-0.5 rounded-full text-xs font-medium border ${sc.color}`}>
+                          <div className="flex items-center flex-wrap gap-2 mb-3">
+                            <h3 className="text-base font-bold text-gray-900">{c.subject}</h3>
+                            <span className={`flex items-center space-x-1 px-3 py-1 rounded-full text-sm font-medium border ${sc.color}`}>
                               {sc.icon}<span className="ml-1">{c.status}</span>
                             </span>
                             {c.isNotification && (
-                              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-600 border border-red-200 animate-pulse">
-                                New Update!
+                              <span className="px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-600 border border-red-200 animate-pulse">
+                                🔴 New Update!
                               </span>
                             )}
                           </div>
 
                           {/* Meta */}
-                          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-400 mb-2">
-                            <span className="flex items-center space-x-1"><Building className="h-3 w-3" /><span>{c.department}</span></span>
-                            <span className="flex items-center space-x-1"><Tag className="h-3 w-3" /><span>{c.category}</span></span>
-                            <span className="flex items-center space-x-1"><Calendar className="h-3 w-3" /><span>{new Date(c.createdAt).toLocaleDateString()}</span></span>
+                          <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-sm text-gray-500 mb-3">
+                            <span className="flex items-center space-x-1.5"><Building className="h-4 w-4" /><span>{c.department}</span></span>
+                            <span className="flex items-center space-x-1.5"><Tag className="h-4 w-4" /><span>{c.category}</span></span>
+                            <span className="flex items-center space-x-1.5"><Calendar className="h-4 w-4" /><span>{new Date(c.createdAt).toLocaleDateString()}</span></span>
                             {c.attachments && c.attachments.length > 0 && (
-                              <span className="flex items-center space-x-1"><Paperclip className="h-3 w-3" /><span>{c.attachments.length} file(s)</span></span>
+                              <span className="flex items-center space-x-1.5"><Paperclip className="h-4 w-4" /><span>{c.attachments.length} attachment(s)</span></span>
                             )}
                           </div>
 
-                          <p className="text-xs text-gray-500 line-clamp-2">{c.description}</p>
+                          <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">{c.description}</p>
 
                           {/* Admin response preview */}
                           {c.adminResponse && (
-                            <div className="mt-2 flex items-start space-x-1.5 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2">
-                              <MessageSquare className="h-3.5 w-3.5 text-blue-500 shrink-0 mt-0.5" />
-                              <p className="text-xs text-blue-700 line-clamp-1">{c.adminResponse}</p>
+                            <div className="mt-3 flex items-start space-x-2 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3">
+                              <MessageSquare className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
+                              <p className="text-sm text-blue-700 line-clamp-1">{c.adminResponse}</p>
                             </div>
                           )}
                         </div>
 
-                        <ChevronRight className="h-4 w-4 text-gray-300 group-hover:text-blue-400 shrink-0 mt-1 transition-colors" />
+                        <ChevronRight className="h-6 w-6 text-gray-300 group-hover:text-blue-400 shrink-0 mt-1 transition-colors" />
                       </div>
                     </div>
                   );
