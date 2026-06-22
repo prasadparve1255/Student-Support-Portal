@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import API_BASE from '../services/api';
 
 interface Student {
     _id: string;
@@ -56,7 +57,7 @@ export const useStudents = (): StudentHook => {
                 return;
             }
             
-            const response = await axios.get('/api/students', {
+            const response = await axios.get(`${API_BASE}/students`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setStudents(response.data);
@@ -89,7 +90,7 @@ export const useStudents = (): StudentHook => {
             if (!token) {
                 throw new Error('No authentication token');
             }
-            const response = await axios.post('/api/students', data, {
+            const response = await axios.post(`${API_BASE}/students`, data, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             await fetchStudents();
@@ -103,7 +104,7 @@ export const useStudents = (): StudentHook => {
 
     const getStudentsByDepartment = async (departmentId: string): Promise<Student[]> => {
         try {
-            const response = await axios.get(`/api/students?departmentId=${departmentId}`, {
+            const response = await axios.get(`${API_BASE}/students?departmentId=${departmentId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             return response.data;
@@ -127,7 +128,7 @@ export const useStudents = (): StudentHook => {
                 return;
             }
             
-            await axios.put(`/api/students/${id}`, data, {
+            await axios.put(`${API_BASE}/students/${id}`, data, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             await fetchStudents();
@@ -155,7 +156,7 @@ export const useStudents = (): StudentHook => {
                 return;
             }
             
-            await axios.delete(`/api/students/${id}`, {
+            await axios.delete(`${API_BASE}/students/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             await fetchStudents();

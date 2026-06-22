@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import API_BASE from '../services/api';
 
 // Mock data for development when API is unavailable
 const MOCK_DEPARTMENTS = [
@@ -40,7 +41,7 @@ export const useDepartments = (): DepartmentHook => {
         try {
             setLoading(true);
             try {
-                const response = await axios.get('/api/departments', {
+                const response = await axios.get(`${API_BASE}/departments`, {
                     headers: token ? { Authorization: `Bearer ${token}` } : {}
                 });
                 setDepartments(response.data);
@@ -65,7 +66,7 @@ export const useDepartments = (): DepartmentHook => {
     const createDepartment = async (data: Omit<Department, '_id'>) => {
         try {
             try {
-                await axios.post('/api/departments', data, {
+                await axios.post(`${API_BASE}/departments`, data, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
             } catch (apiErr) {
@@ -84,7 +85,7 @@ export const useDepartments = (): DepartmentHook => {
     const updateDepartment = async (id: string, data: Partial<Department>) => {
         try {
             try {
-                await axios.put(`/api/departments/${id}`, data, {
+                await axios.put(`${API_BASE}/departments/${id}`, data, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
             } catch (apiErr) {
@@ -104,7 +105,7 @@ export const useDepartments = (): DepartmentHook => {
     const deleteDepartment = async (id: string) => {
         try {
             try {
-                await axios.delete(`/api/departments/${id}`, {
+                await axios.delete(`${API_BASE}/departments/${id}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
             } catch (apiErr) {

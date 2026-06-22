@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import API_BASE from '../services/api';
 
 export interface ClassItem {
   _id: string;
@@ -19,7 +20,7 @@ export const useClasses = (departmentId?: string) => {
     try {
       setLoading(true);
       const params = departmentId ? `?department=${departmentId}` : '';
-      const res = await axios.get(`/api/classes${params}`, {
+      const res = await axios.get(`${API_BASE}/classes${params}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setClasses(res.data);
@@ -36,7 +37,7 @@ export const useClasses = (departmentId?: string) => {
   }, [fetchClasses]);
 
   const createClass = async (data: { name: string; description?: string }) => {
-    const res = await axios.post('/api/classes', data, {
+    const res = await axios.post(`${API_BASE}/classes`, data, {
       headers: { Authorization: `Bearer ${token}` },
     });
     await fetchClasses();
@@ -44,14 +45,14 @@ export const useClasses = (departmentId?: string) => {
   };
 
   const updateClass = async (id: string, data: { name?: string; description?: string }) => {
-    await axios.put(`/api/classes/${id}`, data, {
+    await axios.put(`${API_BASE}/classes/${id}`, data, {
       headers: { Authorization: `Bearer ${token}` },
     });
     await fetchClasses();
   };
 
   const deleteClass = async (id: string) => {
-    await axios.delete(`/api/classes/${id}`, {
+    await axios.delete(`${API_BASE}/classes/${id}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     await fetchClasses();

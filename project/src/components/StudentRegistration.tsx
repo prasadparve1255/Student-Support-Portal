@@ -3,6 +3,7 @@ import { X, UserPlus, GraduationCap, Mail, Lock, User, Eye, EyeOff, CheckCircle 
 import { useDepartments } from "../hooks/useDepartments";
 import { useClasses } from "../hooks/useClasses";
 import { useAuthContext as useAuth } from "../context/AuthContext";
+import API_BASE from "../services/api";
 
 interface Props {
   onClose: () => void;
@@ -58,7 +59,7 @@ const StudentRegistration: React.FC<Props> = ({ onClose, onSuccess }) => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("/api/students", {
+      const res = await fetch(`${API_BASE}/students`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

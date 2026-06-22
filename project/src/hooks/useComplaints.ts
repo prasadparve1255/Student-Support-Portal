@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Complaint } from '../types/complaint';
+import API_BASE from '../services/api';
 
 export const useComplaints = () => {
   const [complaints, setComplaints] = useState<Complaint[]>([]);
@@ -14,9 +15,9 @@ export const useComplaints = () => {
 
       if (!token) return;
 
-      let url = '/api/complaints/all';
+      let url = `${API_BASE}/complaints/all`;
       if (!isAdmin && auth?.currentStudent?.id) {
-        url = `/api/complaints/student/${auth.currentStudent.id}`;
+        url = `${API_BASE}/complaints/student/${auth.currentStudent.id}`;
       }
 
       const res = await fetch(url, {
@@ -74,7 +75,7 @@ export const useComplaints = () => {
       body = JSON.stringify(complaint);
     }
 
-    const res = await fetch('/api/complaints/submit', {
+    const res = await fetch(`${API_BASE}/complaints/submit`, {
       method: 'POST',
       headers,
       body,
@@ -92,7 +93,7 @@ export const useComplaints = () => {
     setIsEmailSending(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`/api/complaints/${id}/status`, {
+      const res = await fetch(`${API_BASE}/complaints/${id}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -110,7 +111,7 @@ export const useComplaints = () => {
 
   const markNotificationAsRead = useCallback(async (id: string) => {
     const token = localStorage.getItem('token');
-    await fetch(`/api/complaints/${id}/read`, {
+    await fetch(`${API_BASE}/complaints/${id}/read`, {
       method: 'PUT',
       headers: { ...(token && { Authorization: `Bearer ${token}` }) },
     });

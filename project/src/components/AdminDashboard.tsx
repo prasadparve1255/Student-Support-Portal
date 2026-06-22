@@ -31,6 +31,7 @@ import ReportsModule from "./ReportsModule";
 import ClassManagement from "./ClassManagement";
 import StudentRegistration from "./StudentRegistration";
 import Pagination from "./Pagination";
+import API_BASE from "../services/api";
 
 const PER_PAGE = 10;
 
@@ -230,7 +231,7 @@ const AdminDashboard: React.FC = () => {
     setIsBackingUp(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('/api/admin/backup/download', {
+      const res = await fetch(`${API_BASE}/admin/backup/download`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error('Backup failed');
