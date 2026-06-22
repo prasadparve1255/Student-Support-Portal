@@ -1,97 +1,121 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Complaint } from '../types/complaint';
 
-const STORAGE_KEY = 'complaints';
-
 export const useComplaints = () => {
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [isEmailSending, setIsEmailSending] = useState(false);
 
-  // Load complaints from localStorage on initial render
-  useEffect(() => {
-    loadComplaints();
-  }, []);
+  const loadComplaints = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const authRaw = localStorage.getItem('auth_state');
+      const auth = authRaw ? JSON.parse(authRaw) : null;
+      const isAdmin = auth?.isAdmin;
 
-  // Function to load complaints from localStorage
-  const loadComplaints = useCallback(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      setComplaints(JSON.parse(stored));
+      if (!token) return;
+
+      let url = '/api/complaints/all';
+      if (!isAdmin && auth?.currentStudent?.id) {
+        url = `/api/complaints/student/${auth.currentStudent.id}`;
+      }
+
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        // Map backend fields to frontend Complaint type
+        const mapped: Complaint[] = data.map((c: any) => ({
+          id: c._id || c.id,
+          studentId: c.studentId,
+          studentName: c.studentName,
+          studentEmail: c.studentEmail || '',
+          department: c.department,
+          subject: c.subject,
+          description: c.description,
+          category: c.category || 'General',
+          status: c.status || 'Pending',
+          adminResponse: c.adminResponse || '',
+          attachments: c.attachments || [],
+          class: c.class || '',
+          createdAt: c.createdAt,
+          updatedAt: c.updatedAt,
+          isNotification: c.isNotification || false,
+          isArchived: c.isArchived || false,
+        }));
+        setComplaints(mapped);
+      }
+    } catch (err) {
+      console.error('Failed to load complaints:', err);
     }
   }, []);
 
-  // Save complaints to localStorage and update state
-  const saveComplaints = useCallback((newComplaints: Complaint[]) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newComplaints));
-    setComplaints(newComplaints);
-  }, []);
+  useEffect(() => {
+    loadComplaints();
+  }, [loadComplaints]);
 
-  const addComplaint = useCallback(async (complaint: Omit<Complaint, 'id' | 'status' | 'createdAt' | 'updatedAt'>) => {
-    const newComplaint: Complaint = {
-      ...complaint,
-      id: Date.now().toString(),
-      status: 'Pending',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    
-    // Get the latest complaints from localStorage to avoid stale state
-    const stored = localStorage.getItem(STORAGE_KEY);
-    const currentComplaints = stored ? JSON.parse(stored) : [];
-    
-    const updatedComplaints = [...currentComplaints, newComplaint];
-    saveComplaints(updatedComplaints);
-    
-    return newComplaint;
-  }, [saveComplaints]);
+  const addComplaint = useCallback(async (complaint: Omit<Complaint, 'id' | 'status' | 'createdAt' | 'updatedAt'>, files?: File[]) => {
+    const token = localStorage.getItem('token');
+
+    let body: FormData | string;
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    if (files && files.length > 0) {
+      const formData = new FormData();
+      Object.entries(complaint).forEach(([k, v]) => {
+        if (v !== undefined && v !== null) formData.append(k, String(v));
+      });
+      files.forEach(f => formData.append('attachments', f));
+      body = formData;
+    } else {
+      headers['Content-Type'] = 'application/json';
+      body = JSON.stringify(complaint);
+    }
+
+    const res = await fetch('/api/complaints/submit', {
+      method: 'POST',
+      headers,
+      body,
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Failed to submit complaint');
+    }
+    await loadComplaints();
+    return await res.json();
+  }, [loadComplaints]);
 
   const updateComplaintStatus = useCallback(async (id: string, status: Complaint['status'], adminResponse?: string) => {
     setIsEmailSending(true);
-    
-    // Get the latest complaints from localStorage to avoid stale state
-    const stored = localStorage.getItem(STORAGE_KEY);
-    const currentComplaints = stored ? JSON.parse(stored) : [];
-    
-    const updated = currentComplaints.map(complaint =>
-      complaint.id === id
-        ? {
-            ...complaint,
-            status,
-            adminResponse,
-            updatedAt: new Date().toISOString(),
-            isNotification: true,
-          }
-        : complaint
-    );
-    
-    // Simulate email sending delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    saveComplaints(updated);
-    setIsEmailSending(false);
-    
-    return updated.find(c => c.id === id);
-  }, [saveComplaints]);
-  
-  const markNotificationAsRead = useCallback((id: string) => {
-    // Get the latest complaints from localStorage to avoid stale state
-    const stored = localStorage.getItem(STORAGE_KEY);
-    const currentComplaints = stored ? JSON.parse(stored) : [];
-    
-    const updated = currentComplaints.map(complaint =>
-      complaint.id === id
-        ? {
-            ...complaint,
-            isNotification: false,
-            isArchived: true,
-          }
-        : complaint
-    );
-    
-    saveComplaints(updated);
-    
-    return updated.find(c => c.id === id);
-  }, [saveComplaints]);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/complaints/${id}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+        body: JSON.stringify({ status, adminResponse }),
+      });
+
+      if (!res.ok) throw new Error('Failed to update status');
+      await loadComplaints();
+    } finally {
+      setIsEmailSending(false);
+    }
+  }, [loadComplaints]);
+
+  const markNotificationAsRead = useCallback(async (id: string) => {
+    const token = localStorage.getItem('token');
+    await fetch(`/api/complaints/${id}/read`, {
+      method: 'PUT',
+      headers: { ...(token && { Authorization: `Bearer ${token}` }) },
+    });
+    await loadComplaints();
+  }, [loadComplaints]);
 
   return {
     complaints,

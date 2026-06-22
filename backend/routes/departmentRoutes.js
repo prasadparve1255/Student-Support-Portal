@@ -1,17 +1,17 @@
 const express = require('express');
 const router = express.Router();
 const departmentController = require('../controllers/departmentController');
-const { protect, admin } = require('../middleware/authMiddleware');
+const { verifyToken, isAdmin, isMainAdmin } = require('../middleware/auth');
 
 // Public route for getting departments
 router.get('/', departmentController.getAllDepartments);
 
-// Protected admin routes
-router.post('/', protect, admin, departmentController.createDepartment);
+// Only Main Admin can create departments
+router.post('/', verifyToken, isMainAdmin, departmentController.createDepartment);
 
 router.route('/:id')
-    .get(protect, admin, departmentController.getDepartmentById)
-    .put(protect, admin, departmentController.updateDepartment)
-    .delete(protect, admin, departmentController.deleteDepartment);
+    .get(verifyToken, isAdmin, departmentController.getDepartmentById)
+    .put(verifyToken, isMainAdmin, departmentController.updateDepartment)
+    .delete(verifyToken, isMainAdmin, departmentController.deleteDepartment);
 
 module.exports = router;

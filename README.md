@@ -1,171 +1,233 @@
-# Digital Complaint Management System
+# 🎓 Student Support Portal
 
-A full-stack application for managing student complaints in educational institutions, built with Firebase, Node.js, Express, React, and Bootstrap.
+A full-stack **MERN** (MongoDB, Express.js, React, Node.js) web application for managing student complaints and support requests in educational institutions.
 
-## Features
+---
 
-- Student and Admin authentication using Firebase Auth
-- Role-based access control
-- Complaint submission and tracking
-- Department-wise complaint filtering
-- Email notifications using SendGrid
-- File attachments using Firebase Storage
-- Dark UI theme with Bootstrap
+## 🚀 Live Demo
 
-## Prerequisites
+> Frontend: _Coming Soon (Deploy on Vercel)_  
+> Backend API: _Coming Soon (Deploy on Render)_
 
-1. Node.js (v14 or higher)
-2. Firebase account
-3. SendGrid account
-4. Git
+---
 
-## Firebase Setup
+## 📌 Features
 
-1. Create a new Firebase project at [Firebase Console](https://console.firebase.google.com)
-2. Enable Email/Password authentication
-3. Create a Firestore database
-4. Create a Storage bucket
-5. Generate a service account key:
-   - Go to Project Settings > Service Accounts
-   - Click "Generate New Private Key"
-   - Save the JSON file as `serviceAccountKey.json` in `backend/config/`
+- 🔐 **Role-based Authentication** — Admin & Student login with JWT
+- 📋 **Complaint Submission** — Students can submit complaints with file attachments
+- 📊 **Admin Dashboard** — View, manage, and track all complaints
+- 🏫 **Department Management** — Complaints routed to specific departments
+- 📧 **Email Notifications** — Auto email on student registration
+- 👨‍🎓 **Student Management** — Register, view, and manage student records
+- 🏷️ **Class Management** — Organize students by class/section
 
-## Backend Setup
+---
 
-1. Navigate to the backend directory:
-   ```bash
-   cd backend
-   ```
+## 🛠️ Tech Stack
 
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+| Layer      | Technology                          |
+|------------|--------------------------------------|
+| Frontend   | React 18, TypeScript, Tailwind CSS, Vite |
+| Backend    | Node.js, Express.js                 |
+| Database   | MongoDB Atlas                        |
+| Auth       | JWT (JSON Web Tokens)               |
+| Email      | Nodemailer (Gmail)                  |
+| File Upload| Multer                              |
 
-3. Create a `.env` file based on `.env.sample`:
-   ```bash
-   cp .env.sample .env
-   ```
+---
 
-4. Update the `.env` file with your credentials:
-   ```
-   PORT=5000
-   NODE_ENV=development
-   FIREBASE_PROJECT_ID=your-project-id
-   FIREBASE_PRIVATE_KEY="your-private-key"
-   FIREBASE_CLIENT_EMAIL=your-client-email
-   FIREBASE_STORAGE_BUCKET=your-project-id.appspot.com
-   SENDGRID_API_KEY=your-sendgrid-api-key
-   FROM_EMAIL=your-verified-sender@domain.com
-   FRONTEND_URL=http://localhost:5173
-   ```
+## 📁 Project Structure
 
-5. Start the backend server:
-   ```bash
-   npm run dev
-   ```
+```
+Student-Support-Portal/
+├── backend/                  # Express.js API server
+│   ├── config/               # Database connection
+│   ├── controllers/          # Route controllers
+│   ├── middleware/           # Auth, error handling, file upload
+│   ├── models/               # Mongoose models
+│   ├── routes/               # API routes
+│   ├── utils/                # Email service
+│   ├── server.js             # Entry point
+│   └── package.json
+├── project/                  # React frontend
+│   ├── src/
+│   │   ├── components/       # UI components
+│   │   ├── context/          # React context (Auth)
+│   │   ├── hooks/            # Custom hooks
+│   │   ├── services/         # API service calls
+│   │   ├── types/            # TypeScript types
+│   │   └── App.tsx
+│   └── package.json
+├── package.json              # Root scripts
+└── README.md
+```
 
-## Frontend Setup
+---
 
-1. Navigate to the project directory:
-   ```bash
-   cd project
-   ```
+## ⚙️ Local Setup Instructions
 
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+### Prerequisites
 
-3. Create a `.env` file:
-   ```bash
-   cp .env.sample .env
-   ```
+- Node.js v16 or higher
+- MongoDB Atlas account
+- Gmail account (for email notifications)
+- Git
 
-4. Update the `.env` file with your Firebase config:
-   ```
-   VITE_FIREBASE_API_KEY=your-api-key
-   VITE_FIREBASE_AUTH_DOMAIN=your-auth-domain
-   VITE_FIREBASE_PROJECT_ID=your-project-id
-   VITE_FIREBASE_STORAGE_BUCKET=your-storage-bucket
-   VITE_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
-   VITE_FIREBASE_APP_ID=your-app-id
-   VITE_API_URL=http://localhost:5000
-   ```
+---
 
-5. Start the development server:
-   ```bash
-   npm run dev
-   ```
+### 1. Clone the Repository
 
-## Firebase Security Rules
-
-The project includes security rules for both Firestore and Storage. You can find them in:
-- `backend/config/firestore.rules`
-- `backend/config/storage.rules`
-
-Deploy these rules using the Firebase CLI:
 ```bash
-firebase deploy --only firestore:rules
-firebase deploy --only storage:rules
+git clone https://github.com/prasadparve1255/Student-Support-Portal.git
+cd Student-Support-Portal
 ```
 
-## Project Structure
+---
 
-```
-.
-├── backend/
-│   ├── config/
-│   │   ├── firebase.js
-│   │   ├── firestore.rules
-│   │   └── storage.rules
-│   ├── controllers/
-│   ├── middleware/
-│   ├── models/
-│   ├── routes/
-│   └── utils/
-└── project/
-    ├── src/
-    │   ├── components/
-    │   ├── contexts/
-    │   ├── hooks/
-    │   ├── pages/
-    │   └── services/
-    └── public/
+### 2. Install Dependencies
+
+```bash
+# Install root dependencies
+npm install
+
+# Install backend dependencies
+cd backend && npm install
+
+# Install frontend dependencies
+cd ../project && npm install
+cd ..
 ```
 
-## API Documentation
+---
 
-### Authentication Endpoints
+### 3. Configure Environment Variables
 
-- POST `/api/auth/student/register` - Register a new student
-- POST `/api/auth/student/login` - Student login
-- POST `/api/auth/admin/register` - Register a new admin (requires main admin)
-- POST `/api/auth/admin/login` - Admin login
+#### Backend — create `backend/.env`
 
-### Complaint Endpoints
+```env
+PORT=5000
+MONGO_URI=mongodb+srv://<username>:<password>@cluster0.xxxxx.mongodb.net/complaintDB?retryWrites=true&w=majority
+JWT_SECRET=your_strong_jwt_secret_here
+NODE_ENV=development
+FRONTEND_URL=http://localhost:5173
 
-- GET `/api/complaints` - Get all complaints (filtered by role)
-- POST `/api/complaints` - Create a new complaint
-- GET `/api/complaints/:id` - Get complaint details
-- PUT `/api/complaints/:id` - Update complaint status
-- DELETE `/api/complaints/:id` - Delete complaint (main admin only)
+EMAIL_USER=your_gmail@gmail.com
+EMAIL_PASSWORD=your_gmail_app_password
 
-### Department Endpoints
+DEFAULT_ADMIN_PASSWORD=admin123
+DEFAULT_STUDENT_PASSWORD=student123
+```
 
-- GET `/api/departments` - Get all departments
-- POST `/api/departments` - Create a new department
-- PUT `/api/departments/:id` - Update department
-- DELETE `/api/departments/:id` - Delete department
+> 💡 For Gmail App Password: Go to Google Account → Security → 2-Step Verification → App Passwords
 
-## Contributing
+#### Frontend — create `project/.env`
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+```env
+VITE_API_BASE_URL=http://localhost:5000/api
+VITE_DEFAULT_STUDENT_PASSWORD=password123
+VITE_DEFAULT_ADMIN_PASSWORD=admin123
+```
 
-## License
+---
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+### 4. Seed the Database
+
+```bash
+cd backend
+npm run seed
+```
+
+---
+
+### 5. Start the Application
+
+```bash
+# From root directory — starts both backend & frontend
+npm start
+```
+
+- Backend runs on: `http://localhost:5000`
+- Frontend runs on: `http://localhost:5173`
+
+---
+
+## 🔑 Default Login Credentials
+
+| Role    | Username / ID | Password   |
+|---------|---------------|------------|
+| Admin   | admin         | admin123   |
+| Student | CS001         | password123 |
+
+---
+
+## 📡 API Endpoints
+
+### Authentication
+| Method | Endpoint                  | Description        |
+|--------|---------------------------|--------------------|
+| POST   | `/api/auth/admin/login`   | Admin login        |
+| POST   | `/api/auth/student/login` | Student login      |
+| GET    | `/api/auth/me`            | Get current user   |
+
+### Students
+| Method | Endpoint              | Description          |
+|--------|-----------------------|----------------------|
+| POST   | `/api/students`       | Register new student |
+| GET    | `/api/students`       | Get all students     |
+| GET    | `/api/students/:id`   | Get student by ID    |
+
+### Complaints
+| Method | Endpoint                              | Description                  |
+|--------|---------------------------------------|------------------------------|
+| POST   | `/api/complaints/submit`              | Submit a complaint           |
+| GET    | `/api/complaints/all`                 | Get all complaints           |
+| GET    | `/api/complaints/:department`         | Get complaints by department |
+| GET    | `/api/complaints/student/:studentId`  | Get complaints by student    |
+
+---
+
+## ☁️ Deployment Guide
+
+### Backend → [Render.com](https://render.com)
+
+1. Go to [render.com](https://render.com) → New → Web Service
+2. Connect your GitHub repo
+3. Set:
+   - Root Directory: `backend`
+   - Build Command: `npm install`
+   - Start Command: `node server.js`
+4. Add all environment variables from `backend/.env`
+
+### Frontend → [Vercel](https://vercel.com)
+
+1. Go to [vercel.com](https://vercel.com) → New Project
+2. Import your GitHub repo
+3. Set:
+   - Root Directory: `project`
+   - Framework: Vite
+4. Add environment variable:
+   - `VITE_API_BASE_URL` = your Render backend URL
+
+---
+
+## 🐛 Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| MongoDB connection error | Check `MONGO_URI` in `.env`, whitelist IP in Atlas |
+| Email not sending | Use Gmail App Password, not regular password |
+| Backend not starting | Check port 5000 is free, run `npm install` |
+| Frontend API error | Verify `VITE_API_BASE_URL` points to backend |
+
+---
+
+## 👨‍💻 Author
+
+**Prasad Parve**  
+GitHub: [@prasadparve1255](https://github.com/prasadparve1255)
+
+---
+
+## 📄 License
+
+This project is for academic purposes.

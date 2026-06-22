@@ -1,5 +1,13 @@
 {
+  "name": "student-support-portal",
+  "version": "1.0.0",
+  "description": "Student Support Portal - Smart Complaint & Grievance Management System",
+  "scripts": {
+    "build": "cd project && npm install && npm run build",
+    "start": "cd backend && npm install && node server.js",
+    "dev": "concurrently \"cd backend && nodemon server.js\" \"cd project && npm run dev\""
+  },
   "dependencies": {
-    "morgan": "^1.10.0"
+    "concurrently": "^8.2.2"
   }
 }

@@ -1,127 +1,232 @@
-const Student = require('../models/Student');
-const Department = require('../models/Department');
-const bcrypt = require('bcryptjs');
+const Student = require("../models/Student");
+const Department = require("../models/Department");
+const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
+const {
+  sendRegistrationEmail,
+  sendAdminNotificationEmail,
+} = require("../utils/emailService");
+const Admin = require("../models/Admin");
+
+// Allowed fields for student update (prevent mass assignment)
+const ALLOWED_UPDATE_FIELDS = ["name", "email", "password", "status", "class"];
 
 // Register new student
 exports.registerStudent = async (req, res) => {
-    try {
-        const { name, email, studentId, departmentId, password } = req.body;
-        
-        // Check if department exists
-        const department = await Department.findById(departmentId);
-        if (!department) {
-            return res.status(404).json({ message: 'Department not found' });
-        }
+  try {
+    const {
+      name,
+      email,
+      studentId,
+      departmentId,
+      department: deptField,
+      password,
+      classId,
+    } = req.body;
 
-        // Check if student already exists
-        const existingStudent = await Student.findOne({ 
-            $or: [{ email }, { studentId }] 
-        });
-        if (existingStudent) {
-            return res.status(400).json({ 
-                message: 'Student with this email or ID already exists' 
-            });
-        }
-
-        // Hash password
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        // Create new student
-        const student = new Student({
-            name,
-            email,
-            studentId,
-            department: departmentId,
-            password: hashedPassword,
-            createdBy: req.user._id, // Assuming admin user is in request
-            registrationSource: req.user.role === 'DEPARTMENT_ADMIN' ? 'DEPARTMENT_DASHBOARD' : 'MANI_ADMIN'
-        });
-
-        await student.save();
-        
-        // Remove password from response
-        const studentResponse = student.toObject();
-        delete studentResponse.password;
-        
-        res.status(201).json(studentResponse);
-    } catch (error) {
-        res.status(400).json({ message: 'Error registering student', error: error.message });
+    if (!name || !email || !password) {
+      return res
+        .status(400)
+        .json({ message: "Name, email, and password are required" });
     }
+
+    const nameRegex = /^[A-Za-z\s]+$/;
+    if (!nameRegex.test(name.trim())) {
+      return res
+        .status(400)
+        .json({ message: "Name should contain only letters and spaces" });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res
+        .status(400)
+        .json({ message: "Please enter a valid email address" });
+    }
+
+    const finalDepartmentId = departmentId || deptField;
+
+    // Find department by ObjectId first, fall back to name
+    let departmentDoc;
+    if (finalDepartmentId) {
+      try {
+        departmentDoc = await Department.findById(finalDepartmentId);
+      } catch (err) {
+        // Not a valid ObjectId, will try by name below
+      }
+      if (!departmentDoc) {
+        departmentDoc = await Department.findOne({
+          name: String(finalDepartmentId),
+        });
+      }
+    }
+
+    if (!departmentDoc) {
+      return res.status(404).json({ message: "Department not found" });
+    }
+
+    // Auto-generate studentId: YYDeptCodeCounter e.g. 24CS01
+    const year = new Date().getFullYear().toString().slice(-2);
+    const deptCode = departmentDoc.code?.toUpperCase().slice(0, 2) || "ST";
+    const prefix = `${year}${deptCode}`;
+    // Safe: prefix is constructed from controlled values only, not user input
+    const escapedPrefix = prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const lastStudent = await Student.findOne({
+      studentId: new RegExp(`^${escapedPrefix}`),
+    }).sort({ studentId: -1 });
+    let counter = 1;
+    if (lastStudent) {
+      const lastNum = parseInt(lastStudent.studentId.slice(prefix.length), 10);
+      if (!isNaN(lastNum)) counter = lastNum + 1;
+    }
+    const finalStudentId = `${prefix}${counter.toString().padStart(2, "0")}`;
+
+    const existingEmail = await Student.findOne({ email: email.toLowerCase() });
+    if (existingEmail) {
+      return res.status(400).json({ message: "Email already registered" });
+    }
+
+    const student = new Student({
+      name: name.trim(),
+      email: email.toLowerCase().trim(),
+      studentId: finalStudentId,
+      department: departmentDoc._id,
+      class: classId || null,
+      password,
+      createdBy: req.user ? req.user._id : null,
+      registrationSource:
+        req.user && req.user.role === "DEPARTMENT_ADMIN"
+          ? "DEPARTMENT_DASHBOARD"
+          : "MAIN_ADMIN",
+    });
+
+    await student.save();
+
+    // class name fetch करा email साठी
+    let className = null;
+    if (classId) {
+      try {
+        const Class = require('../models/Class');
+        const classDoc = await Class.findById(classId).select('name');
+        if (classDoc) className = classDoc.name;
+      } catch (e) { /* ignore */ }
+    }
+
+    // Send registration email
+    try {
+      await sendRegistrationEmail({
+        name: student.name,
+        email: student.email,
+        studentId: student.studentId,
+        originalPassword: password,
+        department: departmentDoc.name,
+        className,
+      });
+    } catch (emailError) {
+      console.error("Email sending failed:", emailError.message);
+    }
+
+    res.status(201).json({
+      studentId: student.studentId,
+      name: student.name,
+      email: student.email,
+      department: departmentDoc.name,
+      _id: student._id,
+    });
+  } catch (error) {
+    console.error("Student registration error:", error);
+    res.status(400).json({
+      message: "Error registering student",
+      error: error.message,
+    });
+  }
 };
 
-// Get all students (with optional department and source filters)
+// Get all students
 exports.getStudents = async (req, res) => {
-    try {
-        const { departmentId, registrationSource } = req.query;
-        const query = {};
-        
-        if (departmentId) {
-            query.department = departmentId;
-        }
-        
-        if (registrationSource) {
-            query.registrationSource = registrationSource;
-        }
-        
-        const students = await Student.find(query)
-            .select('-password')
-            .populate('department', 'name code')
-            .sort('name');
-            
-        res.status(200).json(students);
-    } catch (error) {
-        res.status(500).json({ message: 'Error fetching students', error: error.message });
+  try {
+    let query = {};
+
+    // Department Admin → फक्त स्वतःच्या department चे students
+    if (req.user.role === "DEPARTMENT_ADMIN" && req.user.department) {
+      const deptId = req.user.department._id
+        ? req.user.department._id.toString()
+        : req.user.department.toString();
+      query.department = new mongoose.Types.ObjectId(deptId);
     }
+
+    const students = await Student.find(query)
+      .select("-password")
+      .populate("department", "name code")
+      .populate("class", "name")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json(students);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: "Error fetching students",
+      error: error.message,
+    });
+  }
 };
 
 // Get student by ID
 exports.getStudentById = async (req, res) => {
-    try {
-        const student = await Student.findById(req.params.id)
-            .select('-password')
-            .populate('department', 'name code');
-            
-        if (!student) {
-            return res.status(404).json({ message: 'Student not found' });
-        }
-        res.status(200).json(student);
-    } catch (error) {
-        res.status(500).json({ message: 'Error fetching student', error: error.message });
+  try {
+    const student = await Student.findById(req.params.id)
+      .select("-password")
+      .populate("department", "name code")
+      .populate("class", "name");
+
+    if (!student) {
+      return res.status(404).json({ message: "Student not found" });
     }
+    res.status(200).json(student);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching student" });
+  }
 };
 
-// Update student
+// Update student - only allow safe fields (prevent mass assignment)
 exports.updateStudent = async (req, res) => {
-    try {
-        const updates = { ...req.body };
-        if (updates.password) {
-            updates.password = await bcrypt.hash(updates.password, 10);
-        }
-
-        const student = await Student.findByIdAndUpdate(
-            req.params.id,
-            updates,
-            { new: true, runValidators: true }
-        ).select('-password');
-
-        if (!student) {
-            return res.status(404).json({ message: 'Student not found' });
-        }
-        res.status(200).json(student);
-    } catch (error) {
-        res.status(400).json({ message: 'Error updating student', error: error.message });
+  try {
+    const student = await Student.findById(req.params.id);
+    if (!student) {
+      return res.status(404).json({ message: "Student not found" });
     }
+
+    // Only apply allowed fields to prevent mass assignment of password hash, studentId, department, etc.
+    const updates = {};
+    for (const field of ALLOWED_UPDATE_FIELDS) {
+      if (req.body[field] !== undefined) {
+        updates[field] = req.body[field];
+      }
+    }
+
+    Object.assign(student, updates);
+    await student.save();
+
+    console.log("Student saved successfully:", student.studentId);
+
+    const studentResponse = student.toObject();
+    delete studentResponse.password;
+
+    res.status(200).json(studentResponse);
+  } catch (error) {
+    res.status(400).json({ message: "Error updating student" });
+  }
 };
 
 // Delete student
 exports.deleteStudent = async (req, res) => {
-    try {
-        const student = await Student.findByIdAndDelete(req.params.id);
-        if (!student) {
-            return res.status(404).json({ message: 'Student not found' });
-        }
-        res.status(200).json({ message: 'Student deleted successfully' });
-    } catch (error) {
-        res.status(500).json({ message: 'Error deleting student', error: error.message });
+  try {
+    const student = await Student.findByIdAndDelete(req.params.id);
+    if (!student) {
+      return res.status(404).json({ message: "Student not found" });
     }
+    res.status(200).json({ message: "Student deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error deleting student" });
+  }
 };

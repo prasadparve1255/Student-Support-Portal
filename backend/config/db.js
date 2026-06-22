@@ -2,6 +2,8 @@ const mongoose = require('mongoose');
 
 const connectDB = async () => {
   try {
+    // Use MongoDB Atlas connection string from environment variables
+    // Default to localhost if not provided
     const conn = await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/digital_complaint_system');
     console.log(`MongoDB Connected: ${conn.connection.host}`);
     return conn;

@@ -1,18 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const studentController = require('../controllers/studentController');
-const { protect, admin } = require('../middleware/authMiddleware');
+const { verifyToken, isAdmin } = require('../middleware/auth');
 
-// Protected admin routes
-router.use(protect, admin);
+// POST / requires admin token - only admins can register students
+router.post('/', verifyToken, isAdmin, studentController.registerStudent);
 
-router.route('/')
-    .get(studentController.getStudents)
-    .post(studentController.registerStudent);
-
-router.route('/:id')
-    .get(studentController.getStudentById)
-    .put(studentController.updateStudent)
-    .delete(studentController.deleteStudent);
+// Protected routes for getting students
+router.get('/', verifyToken, isAdmin, studentController.getStudents);
+router.get('/:id', verifyToken, isAdmin, studentController.getStudentById);
+router.put('/:id', verifyToken, isAdmin, studentController.updateStudent);
+router.delete('/:id', verifyToken, isAdmin, studentController.deleteStudent);
 
 module.exports = router;

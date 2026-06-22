@@ -1,9 +1,5 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useAuth } from './useAuth';
-
-// API base URL
-const API_BASE_URL = 'http://localhost:5000';
 
 // Mock data for development when API is unavailable
 const MOCK_DEPARTMENTS = [
@@ -13,10 +9,15 @@ const MOCK_DEPARTMENTS = [
 ];
 
 interface Department {
-    _id: string;
-    name: string;
-    code: string;
-    description: string;
+  _id?: string;
+  name: string;
+  code: string;
+  description: string;
+
+  adminName?: string;
+  username?: string;
+  email?: string;
+  password?: string;
 }
 
 interface DepartmentHook {
@@ -30,7 +31,7 @@ interface DepartmentHook {
 }
 
 export const useDepartments = (): DepartmentHook => {
-    const { token } = useAuth();
+    const token = localStorage.getItem('token');
     const [departments, setDepartments] = useState<Department[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -39,8 +40,8 @@ export const useDepartments = (): DepartmentHook => {
         try {
             setLoading(true);
             try {
-                const response = await axios.get(`${API_BASE_URL}/api/departments`, {
-                    headers: { Authorization: `Bearer ${token}` }
+                const response = await axios.get('/api/departments', {
+                    headers: token ? { Authorization: `Bearer ${token}` } : {}
                 });
                 setDepartments(response.data);
                 setError(null);
@@ -64,7 +65,7 @@ export const useDepartments = (): DepartmentHook => {
     const createDepartment = async (data: Omit<Department, '_id'>) => {
         try {
             try {
-                await axios.post(`${API_BASE_URL}/api/departments`, data, {
+                await axios.post('/api/departments', data, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
             } catch (apiErr) {
@@ -83,7 +84,7 @@ export const useDepartments = (): DepartmentHook => {
     const updateDepartment = async (id: string, data: Partial<Department>) => {
         try {
             try {
-                await axios.put(`${API_BASE_URL}/api/departments/${id}`, data, {
+                await axios.put(`/api/departments/${id}`, data, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
             } catch (apiErr) {
@@ -103,7 +104,7 @@ export const useDepartments = (): DepartmentHook => {
     const deleteDepartment = async (id: string) => {
         try {
             try {
-                await axios.delete(`${API_BASE_URL}/api/departments/${id}`, {
+                await axios.delete(`/api/departments/${id}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
             } catch (apiErr) {

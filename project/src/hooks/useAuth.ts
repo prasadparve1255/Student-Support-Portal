@@ -1,261 +1,260 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useCallback } from 'react';
 import { Student, AuthState, Admin } from '../types/auth';
 
 const STUDENTS_KEY = 'students';
 const ADMINS_KEY = 'admins';
 const AUTH_KEY = 'auth_state';
 
-// Demo students data
 const defaultStudents: Student[] = [
   {
     id: 'CS001',
     name: 'John Doe',
     email: 'john.doe@university.edu',
     department: 'Computer Science & Engineering',
-    password: 'password123',
+    password: '',
   },
   {
     id: 'EC002',
     name: 'Jane Smith',
     email: 'jane.smith@university.edu',
     department: 'Electronics & Communication',
-    password: 'password123',
+    password: '',
   },
   {
     id: 'ME003',
     name: 'Mike Johnson',
     email: 'mike.johnson@university.edu',
     department: 'Mechanical Engineering',
-    password: 'password123',
+    password: '',
   },
 ];
 
-// Default admins data
 const defaultAdmins: Admin[] = [
   {
     username: 'admin',
-    password: 'admin123',
+    password: '',
     department: 'All Departments',
     isMainAdmin: true,
   },
   {
     username: 'csadmin',
-    password: 'admin123',
+    password: '',
     department: 'Computer Science & Engineering',
     isMainAdmin: false,
   },
   {
     username: 'ecadmin',
-    password: 'admin123',
+    password: '',
     department: 'Electronics & Communication',
     isMainAdmin: false,
   },
   {
     username: 'meadmin',
-    password: 'admin123',
+    password: '',
     department: 'Mechanical Engineering',
     isMainAdmin: false,
   },
 ];
 
+const safeParseArray = <T>(key: string, fallback: T[]): T[] => {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as T[]) : fallback;
+  } catch {
+    return fallback;
+  }
+};
+
+const initializeDefaults = () => {
+  try {
+    if (!localStorage.getItem(STUDENTS_KEY)) {
+      localStorage.setItem(STUDENTS_KEY, JSON.stringify(defaultStudents));
+    }
+    if (!localStorage.getItem(ADMINS_KEY)) {
+      localStorage.setItem(ADMINS_KEY, JSON.stringify(defaultAdmins));
+    }
+  } catch {
+    // localStorage unavailable
+  }
+};
+
 export const useAuth = () => {
-  const navigate = useNavigate();
   const [authState, setAuthState] = useState<AuthState>(() => {
+    initializeDefaults();
     try {
-      const storedAuth = localStorage.getItem(AUTH_KEY);
-      if (storedAuth) {
-        const parsed = JSON.parse(storedAuth);
-        // Validate parsed data structure
-        if (typeof parsed === 'object' && 'isAuthenticated' in parsed) {
+      const raw = localStorage.getItem(AUTH_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object' && 'isAuthenticated' in parsed) {
           return parsed as AuthState;
         }
       }
-    } catch (error) {
-      console.error('Failed to parse stored auth state:', error);
+    } catch {
+      localStorage.removeItem(AUTH_KEY);
     }
-    return {
-      isAuthenticated: false,
-      currentStudent: null,
-      currentAdmin: null,
-      isAdmin: false,
-    };
+    return { isAuthenticated: false, currentStudent: null, currentAdmin: null, isAdmin: false };
   });
 
-  // Initialize default data only if not present
-  const initializeData = useCallback(() => {
-    try {
-      if (!localStorage.getItem(STUDENTS_KEY)) {
-        localStorage.setItem(STUDENTS_KEY, JSON.stringify(defaultStudents));
-      }
-      if (!localStorage.getItem(ADMINS_KEY)) {
-        localStorage.setItem(ADMINS_KEY, JSON.stringify(defaultAdmins));
-      }
-    } catch (error) {
-      console.error('Failed to initialize default data:', error);
-    }
-  }, []);
-
-  // Save auth state to localStorage
   const saveAuthState = useCallback((newState: AuthState) => {
     try {
-      setAuthState(newState);
       localStorage.setItem(AUTH_KEY, JSON.stringify(newState));
-    } catch (error) {
-      console.error('Failed to save auth state:', error);
+    } catch {
+      // ignore
     }
+    setAuthState(newState);
   }, []);
 
-  // Handle navigation based on auth state
-  useEffect(() => {
-    initializeData();
-    const { isAuthenticated, isAdmin } = authState;
-    const currentPath = window.location.pathname;
-
-    if (!isAuthenticated && currentPath !== '/') {
-      navigate('/', { replace: true });
-    } else if (isAuthenticated) {
-      if (isAdmin && currentPath !== '/admin-dashboard') {
-        navigate('/admin-dashboard', { replace: true });
-      } else if (!isAdmin && currentPath !== '/student-dashboard') {
-        navigate('/student-dashboard', { replace: true });
-      }
-    }
-  }, [authState, navigate, initializeData]);
-
-  const loginStudent = useCallback((studentId: string, password: string): boolean => {
+  const loginStudent = useCallback(async (studentId: string, password: string): Promise<boolean> => {
     try {
-      const students: Student[] = JSON.parse(localStorage.getItem(STUDENTS_KEY) || '[]');
-      const student = students.find(
-        (s: Student) => s.id.toLowerCase() === studentId.toLowerCase() && s.password === password
-      );
-
-      if (student) {
-        saveAuthState({
-          isAuthenticated: true,
-          currentStudent: student,
-          currentAdmin: null,
-          isAdmin: false,
-        });
+      const response = await fetch('/api/auth/student/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ studentId, password }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        const student: Student = {
+          id: String(data.student?.studentId || ''),
+          name: String(data.student?.name || ''),
+          email: String(data.student?.email || ''),
+          department: String(data.student?.department || ''),
+          password: '', // never store password
+          _id: String(data.student?.id || ''),
+          class: data.student?.class
+            ? typeof data.student.class === 'object'
+              ? String(data.student.class?.name || '')
+              : String(data.student.class)
+            : undefined,
+        };
+        localStorage.setItem('token', String(data.token || ''));
+        saveAuthState({ isAuthenticated: true, currentStudent: student, currentAdmin: null, isAdmin: false });
         return true;
       }
       return false;
-    } catch (error) {
-      console.error('Student login failed:', error);
+    } catch {
       return false;
     }
   }, [saveAuthState]);
 
-  const loginAdmin = useCallback((username: string, password: string): boolean => {
+  const loginAdmin = useCallback(async (username: string, password: string): Promise<boolean> => {
     try {
-      const admins: Admin[] = JSON.parse(localStorage.getItem(ADMINS_KEY) || '[]');
-      const admin = admins.find(
-        (a: Admin) => a.username.toLowerCase() === username.toLowerCase() && a.password === password
-      );
-
-      if (admin) {
-        saveAuthState({
-          isAuthenticated: true,
-          currentStudent: null,
-          currentAdmin: admin,
-          isAdmin: true,
-        });
+      const response = await fetch('/api/auth/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        const admin: Admin = {
+          username: String(data.admin?.username || ''),
+          department: String(data.admin?.department || ''),
+          isMainAdmin: Boolean(data.admin?.isMainAdmin),
+          password: '',
+        };
+        localStorage.setItem('token', String(data.token || ''));
+        saveAuthState({ isAuthenticated: true, currentStudent: null, currentAdmin: admin, isAdmin: true });
         return true;
       }
       return false;
-    } catch (error) {
-      console.error('Admin login failed:', error);
+    } catch {
       return false;
     }
   }, [saveAuthState]);
 
   const logout = useCallback(() => {
     try {
-      saveAuthState({
-        isAuthenticated: false,
-        currentStudent: null,
-        currentAdmin: null,
-        isAdmin: false,
-      });
-    } catch (error) {
-      console.error('Logout failed:', error);
+      localStorage.removeItem('token');
+      localStorage.removeItem(AUTH_KEY);
+    } catch {
+      // ignore
     }
-  }, [saveAuthState]);
+    setAuthState({ isAuthenticated: false, currentStudent: null, currentAdmin: null, isAdmin: false });
+  }, []);
 
   const getStudents = useCallback((): Student[] => {
-    try {
-      const students = JSON.parse(localStorage.getItem(STUDENTS_KEY) || '[]');
-      if (Array.isArray(students)) {
-        return students as Student[];
-      }
-      return [];
-    } catch (error) {
-      console.error('Failed to get students:', error);
-      return [];
-    }
+    return safeParseArray<Student>(STUDENTS_KEY, []);
   }, []);
 
   const getAdmins = useCallback((): Admin[] => {
-    try {
-      const admins = JSON.parse(localStorage.getItem(ADMINS_KEY) || '[]');
-      if (Array.isArray(admins)) {
-        return admins as Admin[];
-      }
-      return [];
-    } catch (error) {
-      console.error('Failed to get admins:', error);
-      return [];
-    }
+    return safeParseArray<Admin>(ADMINS_KEY, []);
   }, []);
 
   const registerStudent = useCallback(
-    (student: Omit<Student, 'id'>, adminDepartment?: string): Student => {
-      try {
-        if (!student.name || !student.email || !student.department || !student.password) {
-          throw new Error('All student fields are required');
-        }
-
-        const students = getStudents();
-        const department = adminDepartment || student.department;
-        if (!department) {
-          throw new Error('Department is required');
-        }
-
-        // Validate email format
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(student.email)) {
-          throw new Error('Invalid email format');
-        }
-
-        // Check for duplicate email
-        if (students.some((s: Student) => s.email.toLowerCase() === student.email.toLowerCase())) {
-          throw new Error('Email already registered');
-        }
-
-        const deptPrefix = department
-          .split(' ')
-          .map(word => word[0])
-          .join('')
-          .toUpperCase()
-          .substring(0, 2);
-        const deptStudents = students.filter((s: Student) => s.department === department);
-        const nextId = `${deptPrefix}${(deptStudents.length + 1).toString().padStart(3, '0')}`;
-
-        const newStudent: Student = {
-          ...student,
-          department,
-          id: nextId,
-        };
-
-        localStorage.setItem(STUDENTS_KEY, JSON.stringify([...students, newStudent]));
-        return newStudent;
-      } catch (error) {
-        console.error('Failed to register student:', error);
-        throw error; // Re-throw to allow calling code to handle
+    async (student: Omit<Student, 'id'>, adminDepartment?: string): Promise<Student> => {
+      if (!student.name || !student.email || !student.department || !student.password) {
+        throw new Error('All student fields are required');
       }
+      const department = adminDepartment || student.department;
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(student.email)) throw new Error('Invalid email format');
+
+      const students = safeParseArray<Student>(STUDENTS_KEY, []);
+      if (students.some(s => s.email.toLowerCase() === student.email.toLowerCase())) {
+        throw new Error('Email already registered');
+      }
+
+      const deptPrefix = department.split(' ').map(w => w[0]).join('').toUpperCase().substring(0, 2);
+      const deptStudents = students.filter(s => s.department === department);
+      const nextId = `${deptPrefix}${(deptStudents.length + 1).toString().padStart(3, '0')}`;
+      const newStudent: Student = { ...student, department, id: nextId };
+
+      localStorage.setItem(STUDENTS_KEY, JSON.stringify([...students, newStudent]));
+
+      try {
+        const { sendRegistrationEmail, showEmailNotification } = await import('../services/emailService');
+        const emailSent = await sendRegistrationEmail({
+          name: newStudent.name,
+          email: newStudent.email,
+          studentId: newStudent.id,
+          password: student.password,
+          department: newStudent.department,
+        });
+        if (emailSent) {
+          showEmailNotification({
+            name: newStudent.name,
+            email: newStudent.email,
+            studentId: newStudent.id,
+            password: student.password,
+            department: newStudent.department,
+          });
+        }
+      } catch {
+        // Email failure should not block registration
+      }
+
+      return newStudent;
     },
-    [getStudents]
+    []
   );
+
+  const updateStudent = useCallback((studentId: string, updatedData: Partial<Omit<Student, 'id'>>) => {
+    const students = safeParseArray<Student>(STUDENTS_KEY, []);
+    const idx = students.findIndex(s => s.id === studentId);
+    if (idx === -1) throw new Error('Student not found');
+
+    if (updatedData.email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(updatedData.email)) throw new Error('Invalid email format');
+      if (students.some(s => s.id !== studentId && s.email.toLowerCase() === updatedData.email!.toLowerCase())) {
+        throw new Error('Email already registered');
+      }
+    }
+
+    const updated = { ...students[idx], ...updatedData };
+    students[idx] = updated;
+    localStorage.setItem(STUDENTS_KEY, JSON.stringify(students));
+    return updated;
+  }, []);
+
+  const deleteStudent = useCallback((studentId: string) => {
+    const students = safeParseArray<Student>(STUDENTS_KEY, []);
+    const filtered = students.filter(s => s.id !== studentId);
+    if (filtered.length === students.length) throw new Error('Student not found');
+    localStorage.setItem(STUDENTS_KEY, JSON.stringify(filtered));
+    return true;
+  }, []);
 
   return {
     authState,
@@ -265,5 +264,7 @@ export const useAuth = () => {
     getStudents,
     getAdmins,
     registerStudent,
+    updateStudent,
+    deleteStudent,
   };
 };

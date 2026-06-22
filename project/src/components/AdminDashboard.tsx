@@ -1,699 +1,4 @@
-// import React, { useState, useMemo } from 'react';
-// import {
-//   Search,
-//   Filter,
-//   Clock,
-//   CheckCircle,
-//   Users,
-//   TrendingUp,
-//   Calendar,
-//   MessageSquare,
-//   MoreHorizontal,
-//   Mail,
-//   Send,
-//   LogOut,
-//   GraduationCap
-// } from 'lucide-react';
-// import { useComplaints } from '../hooks/useComplaints';
-// import { useAuth } from '../hooks/useAuth';
-// import { Complaint, ComplaintStats } from '../types/complaint';
-// import DepartmentManagement from './DepartmentManagement';
-
-// const AdminDashboard: React.FC = () => {
-//   const { complaints, updateComplaintStatus, isEmailSending, loadComplaints } = useComplaints();
-//   const { authState, logout, getStudents, registerStudent } = useAuth();
-//   const [searchTerm, setSearchTerm] = useState('');
-//   const [statusFilter, setStatusFilter] = useState<string>('all');
-//   const [departmentFilter, setDepartmentFilter] = useState<string>(
-//     authState.currentAdmin?.isMainAdmin ? 'all' : (authState.currentAdmin?.department || 'all')
-//   );
-//   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
-//   const [adminResponse, setAdminResponse] = useState('');
-//   const [showRegisterModal, setShowRegisterModal] = useState(false);
-//   const [newStudent, setNewStudent] = useState({
-//     name: '',
-//     email: '',
-//     department: authState.currentAdmin?.department || '',
-//     password: ''
-//   });
-//   const [registrationSuccess, setRegistrationSuccess] = useState('');
-//   const [activeTab, setActiveTab] = useState<'complaints' | 'students' | 'departments'>('complaints');
-
-//   const stats: ComplaintStats = useMemo(() => {
-//     return {
-//       total: complaints.length,
-//       pending: complaints.filter(c => c.status === 'Pending').length,
-//       inProgress: complaints.filter(c => c.status === 'In Progress').length,
-//       resolved: complaints.filter(c => c.status === 'Resolved').length,
-//     };
-//   }, [complaints]);
-
-//   const studentStats = useMemo(() => {
-//     const students = getStudents();
-//     const departmentCounts: Record<string, number> = {};
-
-//     // Count students by department
-//     students.forEach(student => {
-//       if (authState.currentAdmin && !authState.currentAdmin.isMainAdmin &&
-//           student.department !== authState.currentAdmin.department) {
-//         return;
-//       }
-
-//       if (!departmentCounts[student.department]) {
-//         departmentCounts[student.department] = 0;
-//       }
-//       departmentCounts[student.department]++;
-//     });
-
-//     return {
-//       total: students.filter(s =>
-//         authState.currentAdmin?.isMainAdmin || s.department === authState.currentAdmin?.department
-//       ).length,
-//       byDepartment: departmentCounts
-//     };
-//   }, [getStudents, authState.currentAdmin]);
-
-//   const filteredComplaints = useMemo(() => {
-//     return complaints.filter(complaint => {
-//       const matchesSearch = complaint.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-//                            complaint.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-//                            complaint.description.toLowerCase().includes(searchTerm.toLowerCase());
-//       const matchesStatus = statusFilter === 'all' || complaint.status === statusFilter;
-//       const matchesDepartment = departmentFilter === 'all' || complaint.department === departmentFilter;
-
-//       // Department admin can only see complaints from their department
-//       const adminDepartmentFilter = authState.currentAdmin && !authState.currentAdmin.isMainAdmin
-//         ? complaint.department === authState.currentAdmin.department
-//         : true;
-
-//       return matchesSearch && matchesStatus && matchesDepartment && adminDepartmentFilter;
-//     }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-//   }, [complaints, searchTerm, statusFilter, departmentFilter, authState.currentAdmin]);
-
-//   const filteredStudents = useMemo(() => {
-//     const students = getStudents();
-//     return students.filter(student => {
-//       const matchesSearch = student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-//                            student.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-//                            student.email.toLowerCase().includes(searchTerm.toLowerCase());
-//       const matchesDepartment = departmentFilter === 'all' || student.department === departmentFilter;
-
-//       // Department admin can only see students from their department
-//       const adminDepartmentFilter = authState.currentAdmin && !authState.currentAdmin.isMainAdmin
-//         ? student.department === authState.currentAdmin.department
-//         : true;
-
-//       return matchesSearch && matchesDepartment && adminDepartmentFilter;
-//     });
-//   }, [getStudents, searchTerm, departmentFilter, authState.currentAdmin]);
-
-//   const uniqueDepartments = useMemo(() => {
-//     const departments = [
-//       'Computer Science & Engineering',
-//       'Electronics & Communication',
-//       'Mechanical Engineering',
-//       'Civil Engineering',
-//       'Electrical Engineering',
-//       'Information Technology',
-//       'Chemical Engineering'
-//     ];
-//     return departments;
-//   }, []);
-
-//   const getStatusColor = (status: string) => {
-//     switch (status) {
-//       case 'Pending': return 'bg-orange-100 text-orange-800 border-orange-200';
-//       case 'In Progress': return 'bg-blue-100 text-blue-800 border-blue-200';
-//       case 'Resolved': return 'bg-green-100 text-green-800 border-green-200';
-//       default: return 'bg-gray-100 text-gray-800 border-gray-200';
-//     }
-//   };
-
-//   const getPriorityColor = (priority: string) => {
-//     switch (priority) {
-//       case 'High': return 'text-red-600';
-//       case 'Medium': return 'text-yellow-600';
-//       case 'Low': return 'text-green-600';
-//       default: return 'text-gray-600';
-//     }
-//   };
-
-//   const handleStatusUpdate = async (complaint: Complaint, newStatus: Complaint['status']) => {
-//     await updateComplaintStatus(complaint.id, newStatus, adminResponse);
-//     // Reload complaints to refresh the UI
-//     loadComplaints();
-//     setSelectedComplaint(null);
-//     setAdminResponse('');
-//   };
-
-//   const handleRegisterStudent = () => {
-//     if (!newStudent.name || !newStudent.email || !newStudent.department || !newStudent.password) {
-//       setRegistrationSuccess('Please fill all fields');
-//       return;
-//     }
-
-//     // Only main admin can register students
-//     if (!authState.currentAdmin?.isMainAdmin) {
-//       setRegistrationSuccess('Only main admin can register students');
-//       return;
-//     }
-
-//     const registeredStudent = registerStudent(newStudent);
-//     setRegistrationSuccess(`Student registered successfully with ID: ${registeredStudent.id}`);
-//     setNewStudent({
-//       name: '',
-//       email: '',
-//       department: '',
-//       password: ''
-//     });
-
-//     // Clear success message after 3 seconds
-//     setTimeout(() => {
-//       setRegistrationSuccess('');
-//     }, 3000);
-//   };
-
-//   return (
-//     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50">
-//       <div className="max-w-7xl mx-auto px-4 py-8">
-//         {/* Header */}
-//         <div className="mb-8 flex items-center justify-between">
-//           <div>
-//             <h1 className="text-3xl font-bold text-gray-900 mb-2">
-//               {authState.currentAdmin?.isMainAdmin ? 'Main Admin Dashboard' : `${authState.currentAdmin?.department} Admin Dashboard`}
-//             </h1>
-//             <p className="text-gray-600">
-//               {authState.currentAdmin?.isMainAdmin
-//                 ? 'Manage and track all student complaints with automated email notifications'
-//                 : `Manage ${authState.currentAdmin?.department} department complaints`}
-//             </p>
-//           </div>
-//           <div className="flex items-center space-x-4">
-//             {authState.currentAdmin?.isMainAdmin && (
-//               <button
-//                 onClick={() => setShowRegisterModal(true)}
-//                 className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors duration-200"
-//               >
-//                 <Users className="h-4 w-4" />
-//                 <span>Register Student</span>
-//               </button>
-//             )}
-//             <button
-//               onClick={logout}
-//               className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-200"
-//             >
-//               <LogOut className="h-4 w-4" />
-//               <span>Logout</span>
-//             </button>
-//           </div>
-//         </div>
-
-//         {/* Email Status Indicator */}
-//         {isEmailSending && (
-//           <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-//             <div className="flex items-center space-x-3">
-//               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-//               <Mail className="h-4 w-4 text-blue-600" />
-//               <span className="text-blue-800 font-medium">Sending email notification to student...</span>
-//             </div>
-//           </div>
-//         )}
-
-//         {/* Stats Cards */}
-//         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-//           {activeTab === 'complaints' ? (
-//             <>
-//               <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-//                 <div className="flex items-center justify-between">
-//                   <div>
-//                     <p className="text-sm font-medium text-gray-600">Total Complaints</p>
-//                     <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-//                   </div>
-//                   <Users className="h-8 w-8 text-blue-600" />
-//                 </div>
-//               </div>
-
-//               <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-//                 <div className="flex items-center justify-between">
-//                   <div>
-//                     <p className="text-sm font-medium text-gray-600">Pending</p>
-//                     <p className="text-2xl font-bold text-orange-600">{stats.pending}</p>
-//                   </div>
-//                   <Clock className="h-8 w-8 text-orange-600" />
-//                 </div>
-//               </div>
-
-//               <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-//                 <div className="flex items-center justify-between">
-//                   <div>
-//                     <p className="text-sm font-medium text-gray-600">In Progress</p>
-//                     <p className="text-2xl font-bold text-blue-600">{stats.inProgress}</p>
-//                   </div>
-//                   <TrendingUp className="h-8 w-8 text-blue-600" />
-//                 </div>
-//               </div>
-
-//               <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-//                 <div className="flex items-center justify-between">
-//                   <div>
-//                     <p className="text-sm font-medium text-gray-600">Resolved</p>
-//                     <p className="text-2xl font-bold text-green-600">{stats.resolved}</p>
-//                   </div>
-//                   <CheckCircle className="h-8 w-8 text-green-600" />
-//                 </div>
-//               </div>
-//             </>
-//           ) : (
-//             <>
-//               <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-//                 <div className="flex items-center justify-between">
-//                   <div>
-//                     <p className="text-sm font-medium text-gray-600">Total Students</p>
-//                     <p className="text-2xl font-bold text-gray-900">{studentStats.total}</p>
-//                   </div>
-//                   <Users className="h-8 w-8 text-blue-600" />
-//                 </div>
-//               </div>
-
-//               {Object.entries(studentStats.byDepartment).slice(0, 3).map(([dept, count]) => (
-//                 <div key={dept} className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-//                   <div className="flex items-center justify-between">
-//                     <div>
-//                       <p className="text-sm font-medium text-gray-600">{dept.split(' ')[0]}</p>
-//                       <p className="text-2xl font-bold text-purple-600">{count}</p>
-//                     </div>
-//                     <GraduationCap className="h-8 w-8 text-purple-600" />
-//                   </div>
-//                 </div>
-//               ))}
-//             </>
-//           )}
-//         </div>
-
-//         {/* Tab Navigation */}
-//         <div className="bg-white rounded-xl shadow-lg p-4 mb-8 border border-gray-100">
-//           <div className="flex space-x-4">
-//             <button
-//               onClick={() => setActiveTab('complaints')}
-//               className={`px-4 py-2 font-medium rounded-lg transition-colors ${
-//                 activeTab === 'complaints'
-//                   ? 'bg-blue-600 text-white'
-//                   : 'text-gray-600 hover:bg-gray-100'
-//               }`}
-//             >
-//               Complaints
-//             </button>
-//             <button
-//               onClick={() => setActiveTab('students')}
-//               className={`px-4 py-2 font-medium rounded-lg transition-colors ${
-//                 activeTab === 'students'
-//                   ? 'bg-blue-600 text-white'
-//                   : 'text-gray-600 hover:bg-gray-100'
-//               }`}
-//             >
-//               Students
-//             </button>
-//             <button
-//               onClick={() => setActiveTab('departments')}
-//               className={`px-4 py-2 font-medium rounded-lg transition-colors ${
-//                 activeTab === 'departments'
-//                   ? 'bg-blue-600 text-white'
-//                   : 'text-gray-600 hover:bg-gray-100'
-//               }`}
-//             >
-//               Departments
-//             </button>
-//           </div>
-//         </div>
-
-//         {/* Filters */}
-//         <div className="bg-white rounded-xl shadow-lg p-6 mb-8 border border-gray-100">
-//           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-//             <div className="relative">
-//               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-//               <input
-//                 type="text"
-//                 placeholder={activeTab === 'complaints' ? "Search complaints..." : "Search students..."}
-//                 value={searchTerm}
-//                 onChange={(e) => setSearchTerm(e.target.value)}
-//                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-//               />
-//             </div>
-
-//             {activeTab === 'complaints' && (
-//               <div className="relative">
-//                 <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-//                 <select
-//                   value={statusFilter}
-//                   onChange={(e) => setStatusFilter(e.target.value)}
-//                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
-//                 >
-//                   <option value="all">All Status</option>
-//                   <option value="Pending">Pending</option>
-//                   <option value="In Progress">In Progress</option>
-//                   <option value="Resolved">Resolved</option>
-//                 </select>
-//               </div>
-//             )}
-
-//             <div className="relative">
-//               <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-//               <select
-//                 value={departmentFilter}
-//                 onChange={(e) => setDepartmentFilter(e.target.value)}
-//                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
-//               >
-//                 <option value="all">All Departments</option>
-//                 {uniqueDepartments.map(dept => (
-//                   <option key={dept} value={dept}>{dept}</option>
-//                 ))}
-//               </select>
-//             </div>
-//           </div>
-//         </div>
-
-//         {/* Content Based on Active Tab */}
-//         {activeTab === 'complaints' ? (
-//           /* Complaints List */
-//           <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
-//           <div className="p-6 border-b border-gray-200">
-//             <h2 className="text-xl font-semibold text-gray-900">
-//               Complaints ({filteredComplaints.length})
-//             </h2>
-//           </div>
-
-//           {filteredComplaints.length === 0 ? (
-//             <div className="p-12 text-center">
-//               <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-//               <p className="text-gray-500 text-lg">No complaints found</p>
-//               <p className="text-gray-400">Try adjusting your filters or search terms</p>
-//             </div>
-//           ) : (
-//             <div className="divide-y divide-gray-200">
-//               {filteredComplaints.map((complaint) => (
-//                 <div key={complaint.id} className="p-6 hover:bg-gray-50 transition-colors duration-150">
-//                   <div className="flex items-start justify-between">
-//                     <div className="flex-1">
-//                       <div className="flex items-center space-x-3 mb-2">
-//                         <h3 className="text-lg font-semibold text-gray-900">{complaint.subject}</h3>
-//                         <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(complaint.status)}`}>
-//                           {complaint.status}
-//                         </span>
-//                         <span className={`text-xs font-medium ${getPriorityColor(complaint.priority)}`}>
-//                           {complaint.priority} Priority
-//                         </span>
-//                       </div>
-
-//                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
-//                         <div>
-//                           <p className="text-sm text-gray-600">
-//                             <span className="font-medium"><b>Student:</b></span> {complaint.studentName} ({complaint.studentId})
-//                           </p>
-//                           <p className="text-sm text-gray-600 flex items-center space-x-1">
-//                             <Mail className="h-3 w-3" />
-//                             <span className="font-medium"><b>Email</b>:</span>
-//                             <span>{complaint.studentEmail}</span>
-//                           </p>
-//                         </div>
-//                         <div>
-//                           <p className="text-sm text-gray-600">
-//                             <span className="font-medium"><b>Department:</b></span> {complaint.department}
-//                           </p>
-//                           <p className="text-sm text-gray-600">
-//                             <span className="font-medium"><b>Category:</b></span> {complaint.category}
-//                           </p>
-//                         </div>
-//                       </div>
-
-//                       <p className="text-gray-700 mb-3 line-clamp-2">{complaint.description}</p>
-
-//                       <div className="flex items-center justify-between">
-//                         <div className="flex items-center space-x-4 text-sm text-gray-500">
-//                           <span className="flex items-center space-x-1">
-//                             <Calendar className="h-4 w-4" />
-//                             <span>Created: {new Date(complaint.createdAt).toLocaleDateString()}</span>
-//                           </span>
-//                           {complaint.updatedAt !== complaint.createdAt && (
-//                             <span className="flex items-center space-x-1">
-//                               <Clock className="h-4 w-4" />
-//                               <span>Updated: {new Date(complaint.updatedAt).toLocaleDateString()}</span>
-//                             </span>
-//                           )}
-//                         </div>
-
-//                         <button
-//                           onClick={() => setSelectedComplaint(complaint)}
-//                           className="flex items-center space-x-2 px-4 py-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors duration-150"
-//                         >
-//                           <MoreHorizontal className="h-4 w-4" />
-//                           <span>Manage</span>
-//                         </button>
-//                       </div>
-
-//                       {complaint.adminResponse && (
-//                         <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-//                           <p className="text-sm font-medium text-blue-900 mb-1">Admin Response:</p>
-//                           <p className="text-sm text-blue-800">{complaint.adminResponse}</p>
-//                         </div>
-//                       )}
-//                     </div>
-//                   </div>
-//                 </div>
-//               ))}
-//             </div>
-//           )}
-//         </div>
-//         ) : activeTab === 'students' ? (
-//           /* Students List */
-//           <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
-//             <div className="p-6 border-b border-gray-200">
-//               <h2 className="text-xl font-semibold text-gray-900">
-//                 Students ({filteredStudents.length})
-//               </h2>
-//             </div>
-
-//             {filteredStudents.length === 0 ? (
-//               <div className="p-12 text-center">
-//                 <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-//                 <p className="text-gray-500 text-lg">No students found</p>
-//                 <p className="text-gray-400">Try adjusting your filters or search terms</p>
-//               </div>
-//             ) : (
-//               <div className="overflow-x-auto">
-//                 <table className="w-full">
-//                   <thead className="bg-gray-50">
-//                     <tr>
-//                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-//                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-//                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-//                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
-//                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Password</th>
-//                     </tr>
-//                   </thead>
-//                   <tbody className="bg-white divide-y divide-gray-200">
-//                     {filteredStudents.map((student) => (
-//                       <tr key={student.id} className="hover:bg-gray-50">
-//                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{student.id}</td>
-//                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{student.name}</td>
-//                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{student.email}</td>
-//                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{student.department}</td>
-//                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{student.password}</td>
-//                       </tr>
-//                     ))}
-//                   </tbody>
-//                 </table>
-//               </div>
-//             )}
-//           </div>
-//         ) : (
-//           /* Departments Management */
-//           <DepartmentManagement />
-//         )}
-
-//         {/* Complaint Management Modal */}
-//         {selectedComplaint && (
-//           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-//             <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-screen overflow-y-auto">
-//               <div className="p-6 border-b border-gray-200">
-//                 <h2 className="text-xl font-semibold text-gray-900">Manage Complaint</h2>
-//                 <p className="text-gray-600">ID: {selectedComplaint.id}</p>
-//                 <div className="flex items-center space-x-2 mt-2">
-//                   <Mail className="h-4 w-4 text-gray-500" />
-//                   <span className="text-sm text-gray-600">Student will be notified via email: {selectedComplaint.studentEmail}</span>
-//                 </div>
-//               </div>
-
-//               <div className="p-6">
-//                 <div className="mb-6">
-//                   <h3 className="font-semibold text-gray-900 mb-2">Current Status</h3>
-//                   <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(selectedComplaint.status)}`}>
-//                     {selectedComplaint.status}
-//                   </span>
-//                 </div>
-
-//                 <div className="mb-6">
-//                   <h3 className="font-semibold text-gray-900 mb-2">Complaint Details</h3>
-//                   <div className="bg-gray-50 p-4 rounded-lg">
-//                     <p className="text-sm text-gray-700">{selectedComplaint.description}</p>
-//                   </div>
-//                 </div>
-
-//                 <div className="mb-6">
-//                   <label className="block text-sm font-medium text-gray-700 mb-2">
-//                     Admin Response
-//                   </label>
-//                   <textarea
-//                     value={adminResponse}
-//                     onChange={(e) => setAdminResponse(e.target.value)}
-//                     rows={4}
-//                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-//                     placeholder="Add a response to the student (this will be included in the email notification)..."
-//                   />
-//                 </div>
-
-//                 <div className="bg-blue-50 p-4 rounded-lg mb-6">
-//                   <div className="flex items-center space-x-2 mb-2">
-//                     <Send className="h-4 w-4 text-blue-600" />
-//                     <span className="text-sm font-medium text-blue-800">Email Notification</span>
-//                   </div>
-//                   <p className="text-sm text-blue-700">
-//                     Updating the status will automatically send an email notification to the student with the new status and your response.
-//                   </p>
-//                 </div>
-
-//                 <div className="flex space-x-3">
-//                   {selectedComplaint.status !== 'In Progress' && (
-//                     <button
-//                       onClick={() => handleStatusUpdate(selectedComplaint, 'In Progress')}
-//                       disabled={isEmailSending}
-//                       className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
-//                     >
-//                       Mark In Progress
-//                     </button>
-//                   )}
-//                   {selectedComplaint.status !== 'Resolved' && (
-//                     <button
-//                       onClick={() => handleStatusUpdate(selectedComplaint, 'Resolved')}
-//                       disabled={isEmailSending}
-//                       className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
-//                     >
-//                       Mark Resolved
-//                     </button>
-//                   )}
-//                   <button
-//                     onClick={() => {
-//                       setSelectedComplaint(null);
-//                       setAdminResponse('');
-//                     }}
-//                     className="flex-1 bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors duration-150"
-//                   >
-//                     Cancel
-//                   </button>
-//                 </div>
-//               </div>
-//             </div>
-//           </div>
-//         )}
-
-//         {/* Student Registration Modal */}
-//         {showRegisterModal && (
-//           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-//             <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
-//               <div className="p-6 border-b border-gray-200">
-//                 <h2 className="text-xl font-semibold text-gray-900">Register New Student</h2>
-//                 <p className="text-gray-600">Students will be assigned department-specific IDs</p>
-//               </div>
-//               <div className="p-6">
-//                 <div className="space-y-4">
-//                   <div>
-//                     <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-//                     <input
-//                       type="text"
-//                       value={newStudent.name}
-//                       onChange={(e) => setNewStudent({...newStudent, name: e.target.value})}
-//                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-//                       placeholder="Enter student's full name"
-//                     />
-//                   </div>
-
-//                   <div>
-//                     <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-//                     <input
-//                       type="email"
-//                       value={newStudent.email}
-//                       onChange={(e) => setNewStudent({...newStudent, email: e.target.value})}
-//                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-//                       placeholder="Enter student's email"
-//                     />
-//                   </div>
-
-//                   <div>
-//                     <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
-//                     <select
-//                       value={newStudent.department}
-//                       onChange={(e) => setNewStudent({...newStudent, department: e.target.value})}
-//                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-//                     >
-//                       <option value="">Select Department</option>
-//                       {uniqueDepartments.map(dept => (
-//                         <option key={dept} value={dept}>{dept}</option>
-//                       ))}
-//                     </select>
-//                   </div>
-
-//                   <div>
-//                     <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-//                     <input
-//                       type="password"
-//                       value={newStudent.password}
-//                       onChange={(e) => setNewStudent({...newStudent, password: e.target.value})}
-//                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-//                       placeholder="Enter password"
-//                     />
-//                   </div>
-//                 </div>
-
-//                 {registrationSuccess && (
-//                   <div className={`mt-4 p-3 rounded-lg ${registrationSuccess.includes('successfully') ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
-//                     {registrationSuccess}
-//                   </div>
-//                 )}
-
-//                 <div className="mt-6 flex space-x-3">
-//                   <button
-//                     onClick={handleRegisterStudent}
-//                     className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors duration-150"
-//                   >
-//                     Register Student
-//                   </button>
-//                   <button
-//                     onClick={() => {
-//                       setShowRegisterModal(false);
-//                       setRegistrationSuccess('');
-//                       setNewStudent({
-//                         name: '',
-//                         email: '',
-//                         department: '',
-//                         password: ''
-//                       });
-//                     }}
-//                     className="flex-1 bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors duration-150"
-//                   >
-//                     Cancel
-//                   </button>
-//                 </div>
-//               </div>
-//             </div>
-//           </div>
-//         )}
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default AdminDashboard;
-
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Search,
   Filter,
@@ -706,101 +11,124 @@ import {
   MoreHorizontal,
   Mail,
   Send,
+  Download,
   LogOut,
   GraduationCap,
+  UserCircle,
+  Paperclip,
+  FileText as FileIcon,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useComplaints } from "../hooks/useComplaints";
-import { useAuth } from "../hooks/useAuth";
+import { useAuthContext as useAuth } from "../context/AuthContext";
+import { useStudents } from "../hooks/useStudents";
+import { useDepartments } from "../hooks/useDepartments";
 import { Complaint, ComplaintStats } from "../types/complaint";
 import DepartmentManagement from "./DepartmentManagement";
+import StudentCard from "./StudentCard";
+import ReportsModule from "./ReportsModule";
+import ClassManagement from "./ClassManagement";
+import { useClasses } from "../hooks/useClasses";
+import Pagination from "./Pagination";
+
+const PER_PAGE = 10;
 
 const AdminDashboard: React.FC = () => {
-  const { complaints, updateComplaintStatus, isEmailSending, loadComplaints } =
-    useComplaints();
-  const { authState, logout, getStudents, registerStudent } = useAuth();
+  const { complaints, updateComplaintStatus, isEmailSending } = useComplaints();
+  const { authState, logout } = useAuth();
+  const { students, refreshStudents } = useStudents();
+  const { departments } = useDepartments();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [departmentFilter, setDepartmentFilter] = useState<string>(
-    authState.currentAdmin?.isMainAdmin
-      ? "all"
-      : authState.currentAdmin?.department || "all"
-  );
-  const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(
-    null
-  );
+  const [departmentFilter, setDepartmentFilter] = useState<string>("all");
+  const [classFilter, setClassFilter] = useState<string>("all");
+  const [dateFilter, setDateFilter] = useState<string>("");
+  const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
   const [adminResponse, setAdminResponse] = useState("");
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [newStudent, setNewStudent] = useState({
     name: "",
     email: "",
     department: authState.currentAdmin?.department || "",
+    classId: "",
     password: "",
   });
+  const [registerClassRequired, setRegisterClassRequired] = useState(false);
+  const [isBackingUp, setIsBackingUp] = useState(false);
   const [registrationSuccess, setRegistrationSuccess] = useState("");
   const [activeTab, setActiveTab] = useState<
-    "complaints" | "students" | "departments"
+    "complaints" | "students" | "departments" | "reports" | "classes"
   >("complaints");
-  const [isLoading, setIsLoading] = useState(false);
+  const [complaintsPage, setComplaintsPage] = useState(1);
+  const [studentsPage, setStudentsPage] = useState(1);
 
-  // Redirect to login if not authenticated or not an admin
-  useEffect(() => {
-    if (!authState.isAuthenticated || !authState.isAdmin) {
-      navigate("/");
-    }
-  }, [authState, navigate]);
+  // Department Admin च्या department चा _id — classes fetch साठी
+  const adminDeptId = useMemo(() => {
+    const deptName = authState.currentAdmin?.isMainAdmin
+      ? newStudent.department
+      : authState.currentAdmin?.department;
+    return departments.find(d => d.name === deptName)?._id;
+  }, [departments, authState.currentAdmin, newStudent.department]);
 
-  // Load complaints on mount
-  useEffect(() => {
-    const fetchComplaints = async () => {
-      setIsLoading(true);
-      try {
-        await loadComplaints();
-      } catch (error) {
-        console.error("Failed to load complaints:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchComplaints();
-  }, [loadComplaints]);
+  const { classes } = useClasses(adminDeptId);
 
   const stats: ComplaintStats = useMemo(() => {
+    const today = new Date().toDateString();
     return {
       total: complaints.length,
       pending: complaints.filter((c) => c.status === "Pending").length,
       inProgress: complaints.filter((c) => c.status === "In Progress").length,
       resolved: complaints.filter((c) => c.status === "Resolved").length,
+      today: complaints.filter((c) => new Date(c.createdAt).toDateString() === today).length,
     };
   }, [complaints]);
 
   const studentStats = useMemo(() => {
-    const students = getStudents();
     const departmentCounts: Record<string, number> = {};
+    const classCounts: Record<string, number> = {};
 
     students.forEach((student) => {
+      const deptName =
+        typeof student.department === "object"
+          ? (student.department as { name: string } | null)?.name || ""
+          : student.department || "";
+      if (!deptName) return;
       if (
         authState.currentAdmin &&
         !authState.currentAdmin.isMainAdmin &&
-        student.department !== authState.currentAdmin.department
+        deptName !== authState.currentAdmin.department
       ) {
         return;
       }
+      if (!departmentCounts[deptName]) departmentCounts[deptName] = 0;
+      departmentCounts[deptName]++;
 
-      departmentCounts[student.department] =
-        (departmentCounts[student.department] || 0) + 1;
+      const className =
+        typeof (student as any).class === "object"
+          ? (student as any).class?.name || ""
+          : (student as any).class || "";
+      if (className) {
+        if (!classCounts[className]) classCounts[className] = 0;
+        classCounts[className]++;
+      }
     });
 
     return {
-      total: students.filter(
-        (s) =>
+      total: students.filter((s) => {
+        const deptName =
+          typeof s.department === "object"
+            ? (s.department as { name: string } | null)?.name || ""
+            : s.department || "";
+        return (
           authState.currentAdmin?.isMainAdmin ||
-          s.department === authState.currentAdmin?.department
-      ).length,
+          deptName === authState.currentAdmin?.department
+        );
+      }).length,
       byDepartment: departmentCounts,
+      byClass: classCounts,
     };
-  }, [getStudents, authState.currentAdmin]);
+  }, [students, authState.currentAdmin]);
 
   const filteredComplaints = useMemo(() => {
     return complaints
@@ -818,6 +146,13 @@ const AdminDashboard: React.FC = () => {
         const matchesDepartment =
           departmentFilter === "all" ||
           complaint.department === departmentFilter;
+        const complaintDate = new Date(complaint.createdAt);
+        const localDate = `${complaintDate.getFullYear()}-${String(complaintDate.getMonth() + 1).padStart(2, '0')}-${String(complaintDate.getDate()).padStart(2, '0')}`;
+        const matchesDate = !dateFilter || localDate === dateFilter;
+        const matchesClass =
+          classFilter === "all" || (complaint as any).class === classFilter;
+
+        // Department admin can only see complaints from their department
         const adminDepartmentFilter =
           authState.currentAdmin && !authState.currentAdmin.isMainAdmin
             ? complaint.department === authState.currentAdmin.department
@@ -827,50 +162,63 @@ const AdminDashboard: React.FC = () => {
           matchesSearch &&
           matchesStatus &&
           matchesDepartment &&
+          matchesDate &&
+          matchesClass &&
           adminDepartmentFilter
         );
       })
       .sort(
         (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
       );
   }, [
     complaints,
     searchTerm,
     statusFilter,
     departmentFilter,
+    classFilter,
+    dateFilter,
     authState.currentAdmin,
   ]);
 
+  React.useEffect(() => { setComplaintsPage(1); }, [searchTerm, statusFilter, departmentFilter, classFilter, dateFilter]);
+  React.useEffect(() => { setStudentsPage(1); }, [searchTerm, departmentFilter, classFilter]);
+
   const filteredStudents = useMemo(() => {
-    const students = getStudents();
     return students.filter((student) => {
       const matchesSearch =
         student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        student.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (student.studentId || "")
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
         student.email.toLowerCase().includes(searchTerm.toLowerCase());
+      const deptName =
+        typeof student.department === "object"
+          ? (student.department as { name: string } | null)?.name || ""
+          : student.department || "";
       const matchesDepartment =
-        departmentFilter === "all" || student.department === departmentFilter;
+        departmentFilter === "all" ||
+        deptName?.toLowerCase() === departmentFilter.toLowerCase();
+      const studentClass =
+        typeof (student as any).class === "object"
+          ? (student as any).class?.name || ""
+          : (student as any).class || "";
+      const matchesClass =
+        classFilter === "all" || studentClass === classFilter;
+
       const adminDepartmentFilter =
         authState.currentAdmin && !authState.currentAdmin.isMainAdmin
-          ? student.department === authState.currentAdmin.department
+          ? deptName?.toLowerCase() ===
+            authState.currentAdmin.department?.toLowerCase()
           : true;
 
-      return matchesSearch && matchesDepartment && adminDepartmentFilter;
+      return matchesSearch && matchesDepartment && matchesClass && adminDepartmentFilter;
     });
-  }, [getStudents, searchTerm, departmentFilter, authState.currentAdmin]);
+  }, [students, searchTerm, departmentFilter, classFilter, authState.currentAdmin]);
 
   const uniqueDepartments = useMemo(() => {
-    return [
-      "Computer Science & Engineering",
-      "Electronics & Communication",
-      "Mechanical Engineering",
-      "Civil Engineering",
-      "Electrical Engineering",
-      "Information Technology",
-      "Chemical Engineering",
-    ];
-  }, []);
+    return departments.map((d) => d.name);
+  }, [departments]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -885,37 +233,40 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "High":
-        return "text-red-600";
-      case "Medium":
-        return "text-yellow-600";
-      case "Low":
-        return "text-green-600";
-      default:
-        return "text-gray-600";
-    }
-  };
-
   const handleStatusUpdate = async (
     complaint: Complaint,
-    newStatus: Complaint["status"]
+    newStatus: Complaint["status"],
   ) => {
-    setIsLoading(true);
+    await updateComplaintStatus(complaint.id, newStatus, adminResponse);
+    setSelectedComplaint(null);
+    setAdminResponse("");
+  };
+
+  const handleBackup = async () => {
+    setIsBackingUp(true);
     try {
-      await updateComplaintStatus(complaint.id, newStatus, adminResponse);
-      await loadComplaints();
-      setSelectedComplaint(null);
-      setAdminResponse("");
-    } catch (error) {
-      console.error("Failed to update complaint status:", error);
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/admin/backup/download', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Backup failed');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const disposition = res.headers.get('Content-Disposition') || '';
+      const filename = disposition.match(/filename="(.+)"$/)?.[1] || `backup-${new Date().toISOString().slice(0,10)}.json`;
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert('Backup failed. Please try again.');
     } finally {
-      setIsLoading(false);
+      setIsBackingUp(false);
     }
   };
 
-  const handleRegisterStudent = () => {
+  const handleRegisterStudent = async () => {
     if (
       !newStudent.name ||
       !newStudent.email ||
@@ -925,64 +276,82 @@ const AdminDashboard: React.FC = () => {
       setRegistrationSuccess("Please fill all fields");
       return;
     }
-
-    if (!authState.currentAdmin?.isMainAdmin) {
-      setRegistrationSuccess("Only main admin can register students");
+    if (classes.length > 0 && !newStudent.classId) {
+      setRegisterClassRequired(true);
       return;
     }
-
+    setRegisterClassRequired(false);
     try {
-      const registeredStudent = registerStudent(newStudent);
-      setRegistrationSuccess(
-        `Student registered successfully with ID: ${registeredStudent.id}`
-      );
-      setNewStudent({
-        name: "",
-        email: "",
-        department: authState.currentAdmin?.department || "",
-        password: "",
+      const token = localStorage.getItem("token");
+      const response = await fetch("/api/students", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+        body: JSON.stringify({
+          name: newStudent.name,
+          email: newStudent.email,
+          department: newStudent.department,
+          classId: newStudent.classId || undefined,
+          password: newStudent.password,
+        }),
+
       });
-      setTimeout(() => setRegistrationSuccess(""), 3000);
+      const responseData = await response.json();
+      if (response.ok) {
+        setRegistrationSuccess(
+          `Student registered successfully with ID: ${responseData.studentId}`,
+        );
+        await refreshStudents();
+        setNewStudent({
+          name: "",
+          email: "",
+          department: authState.currentAdmin?.department || "",
+          classId: "",
+          password: "",
+        });
+        setTimeout(() => {
+          setRegistrationSuccess("");
+          setShowRegisterModal(false);
+          setActiveTab("students");
+        }, 2000);
+      } else {
+        setRegistrationSuccess(
+          responseData.message || "Error registering student",
+        );
+      }
     } catch (error) {
-      setRegistrationSuccess("Failed to register student");
-      setTimeout(() => setRegistrationSuccess(""), 3000);
+      const err = error as Error;
+      setRegistrationSuccess("Network error: " + err.message);
     }
   };
-
-  const handleLogout = () => {
-    logout();
-    navigate("/");
-  };
-
-  if (!authState.currentAdmin) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50 flex items-center justify-center">
-        <p className="text-red-600">
-          Error: Admin data not found. Please log in again.
-        </p>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50">
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
         {/* Header */}
         <div className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              {authState.currentAdmin.isMainAdmin
-                ? "Main Admin Dashboard"
-                : `${authState.currentAdmin.department} Admin Dashboard`}
-            </h1>
+            <div className="flex items-center space-x-3 mb-2">
+              <img src="/logo.svg" alt="logo" className="h-10 w-10" />
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">
+                  {authState.currentAdmin?.isMainAdmin
+                    ? "Main Admin Dashboard"
+                    : `${authState.currentAdmin?.department} Admin Dashboard`}
+                </h1>
+                <p className="text-xs text-purple-600 font-semibold">Student Support Portal</p>
+              </div>
+            </div>
             <p className="text-gray-600">
-              {authState.currentAdmin.isMainAdmin
+              {authState.currentAdmin?.isMainAdmin
                 ? "Manage and track all student complaints with automated email notifications"
-                : `Manage ${authState.currentAdmin.department} department complaints`}
+                : `Manage ${authState.currentAdmin?.department} department complaints`}
             </p>
           </div>
           <div className="flex items-center space-x-4">
-            {authState.currentAdmin.isMainAdmin && (
+            {authState.currentAdmin && !authState.currentAdmin.isMainAdmin && (
               <button
                 onClick={() => setShowRegisterModal(true)}
                 className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors duration-200"
@@ -992,7 +361,25 @@ const AdminDashboard: React.FC = () => {
               </button>
             )}
             <button
-              onClick={handleLogout}
+              onClick={handleBackup}
+              disabled={isBackingUp}
+              className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white hover:bg-green-700 rounded-lg transition-colors duration-200 disabled:opacity-50"
+            >
+              <Download className="h-4 w-4" />
+              <span>{isBackingUp ? 'Backing up...' : 'Backup'}</span>
+            </button>
+            <button
+              onClick={() => navigate("/profile")}
+              className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+            >
+              <UserCircle className="h-5 w-5" />
+              <span>Profile</span>
+            </button>
+            <button
+              onClick={() => {
+                logout();
+                navigate("/");
+              }}
               className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-200"
             >
               <LogOut className="h-4 w-4" />
@@ -1015,7 +402,7 @@ const AdminDashboard: React.FC = () => {
         )}
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
           {activeTab === "complaints" ? (
             <>
               <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
@@ -1071,8 +458,21 @@ const AdminDashboard: React.FC = () => {
                   <CheckCircle className="h-8 w-8 text-green-600" />
                 </div>
               </div>
+              <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">
+                      Today
+                    </p>
+                    <p className="text-2xl font-bold text-purple-600">
+                      {stats.today}
+                    </p>
+                  </div>
+                  <Calendar className="h-8 w-8 text-purple-600" />
+                </div>
+              </div>
             </>
-          ) : (
+          ) : activeTab === "students" ? (
             <>
               <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
                 <div className="flex items-center justify-between">
@@ -1088,17 +488,17 @@ const AdminDashboard: React.FC = () => {
                 </div>
               </div>
 
-              {Object.entries(studentStats.byDepartment)
-                .slice(0, 3)
-                .map(([dept, count]) => (
+              {Object.entries(studentStats.byClass)
+                .slice(0, 4)
+                .map(([cls, count]) => (
                   <div
-                    key={dept}
+                    key={cls}
                     className="bg-white rounded-xl shadow-lg p-6 border border-gray-100"
                   >
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-gray-600">
-                          {dept.split(" ")[0]}
+                        <p className="text-sm font-medium text-gray-600 truncate max-w-[100px]">
+                          {cls}
                         </p>
                         <p className="text-2xl font-bold text-purple-600">
                           {count}
@@ -1108,6 +508,48 @@ const AdminDashboard: React.FC = () => {
                     </div>
                   </div>
                 ))}
+            </>
+          ) : activeTab === "classes" ? (
+            <>
+              <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Total Classes</p>
+                    <p className="text-2xl font-bold text-purple-600">{classes.length}</p>
+                  </div>
+                  <GraduationCap className="h-8 w-8 text-purple-600" />
+                </div>
+              </div>
+              {classes.slice(0, 4).map((c) => (
+                <div key={c._id} className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600 truncate max-w-[100px]">{c.name}</p>
+                      <p className="text-2xl font-bold text-purple-600">
+                        {students.filter(s => {
+                          const sc = typeof (s as any).class === 'object' ? (s as any).class?.name : (s as any).class;
+                          return sc === c.name;
+                        }).length}
+                      </p>
+                    </div>
+                    <GraduationCap className="h-8 w-8 text-purple-400" />
+                  </div>
+                </div>
+              ))}
+            </>
+          ) : activeTab === "reports" ? (
+            <></>
+          ) : (
+            <>
+              <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Total Departments</p>
+                    <p className="text-2xl font-bold text-gray-900">{departments.length}</p>
+                  </div>
+                  <GraduationCap className="h-8 w-8 text-green-600" />
+                </div>
+              </div>
             </>
           )}
         </div>
@@ -1135,22 +577,46 @@ const AdminDashboard: React.FC = () => {
             >
               Students
             </button>
+            {authState.currentAdmin?.isMainAdmin && (
+              <button
+                onClick={() => setActiveTab("departments")}
+                className={`px-4 py-2 font-medium rounded-lg transition-colors ${
+                  activeTab === "departments"
+                    ? "bg-blue-600 text-white"
+                    : "text-gray-600 hover:bg-gray-100"
+                }`}
+              >
+                Departments
+              </button>
+            )}
+            {!authState.currentAdmin?.isMainAdmin && (
+              <button
+                onClick={() => setActiveTab("classes")}
+                className={`px-4 py-2 font-medium rounded-lg transition-colors ${
+                  activeTab === "classes"
+                    ? "bg-purple-600 text-white"
+                    : "text-gray-600 hover:bg-gray-100"
+                }`}
+              >
+                Classes
+              </button>
+            )}
             <button
-              onClick={() => setActiveTab("departments")}
+              onClick={() => setActiveTab("reports")}
               className={`px-4 py-2 font-medium rounded-lg transition-colors ${
-                activeTab === "departments"
+                activeTab === "reports"
                   ? "bg-blue-600 text-white"
                   : "text-gray-600 hover:bg-gray-100"
               }`}
             >
-              Departments
+              Reports
             </button>
           </div>
         </div>
 
         {/* Filters */}
         <div className="bg-white rounded-xl shadow-lg p-6 mb-8 border border-gray-100">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
@@ -1187,22 +653,59 @@ const AdminDashboard: React.FC = () => {
               <select
                 value={departmentFilter}
                 onChange={(e) => setDepartmentFilter(e.target.value)}
-                disabled={!authState.currentAdmin?.isMainAdmin}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none disabled:opacity-50"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
               >
-                <option value="all">All Departments</option>
-                {uniqueDepartments.map((dept) => (
-                  <option key={dept} value={dept}>
-                    {dept}
+                {authState.currentAdmin?.isMainAdmin ? (
+                  <>
+                    <option value="all">All Departments</option>
+                    {uniqueDepartments.map((dept) => (
+                      <option key={dept} value={dept}>
+                        {dept}
+                      </option>
+                    ))}
+                  </>
+                ) : (
+                  <option value={authState.currentAdmin?.department}>
+                    {authState.currentAdmin?.department}
                   </option>
-                ))}
+                )}
               </select>
             </div>
+
+            {/* Class Filter */}
+            {classes.length > 0 && (
+              <div className="relative">
+                <GraduationCap className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <select
+                  value={classFilter}
+                  onChange={(e) => setClassFilter(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
+                >
+                  <option value="all">All Classes</option>
+                  {classes.map((c) => (
+                    <option key={c._id} value={c.name}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {activeTab === "complaints" && (
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="date"
+                  value={dateFilter}
+                  onChange={(e) => setDateFilter(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            )}
           </div>
         </div>
 
         {/* Content Based on Active Tab */}
         {activeTab === "complaints" ? (
+          /* Complaints List */
           <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
             <div className="p-6 border-b border-gray-200">
               <h2 className="text-xl font-semibold text-gray-900">
@@ -1210,12 +713,7 @@ const AdminDashboard: React.FC = () => {
               </h2>
             </div>
 
-            {isLoading ? (
-              <div className="p-12 text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="text-gray-500 mt-4">Loading complaints...</p>
-              </div>
-            ) : filteredComplaints.length === 0 ? (
+            {filteredComplaints.length === 0 ? (
               <div className="p-12 text-center">
                 <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-500 text-lg">No complaints found</p>
@@ -1224,8 +722,9 @@ const AdminDashboard: React.FC = () => {
                 </p>
               </div>
             ) : (
+              <>
               <div className="divide-y divide-gray-200">
-                {filteredComplaints.map((complaint) => (
+                {filteredComplaints.slice((complaintsPage - 1) * PER_PAGE, complaintsPage * PER_PAGE).map((complaint) => (
                   <div
                     key={complaint.id}
                     className="p-6 hover:bg-gray-50 transition-colors duration-150"
@@ -1237,42 +736,42 @@ const AdminDashboard: React.FC = () => {
                             {complaint.subject}
                           </h3>
                           <span
-                            className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
-                              complaint.status
-                            )}`}
+                            className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(complaint.status)}`}
                           >
                             {complaint.status}
                           </span>
-                          <span
-                            className={`text-xs font-medium ${getPriorityColor(
-                              complaint.priority
-                            )}`}
-                          >
-                            {complaint.priority} Priority
-                          </span>
+                          {/* <span className={`text-xs font-medium ${getPriorityColor(complaint.priority)}`}>
+                          {complaint.priority} Priority
+                        </span> */}
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
                           <div>
                             <p className="text-sm text-gray-600">
-                              <span className="font-medium">Student:</span>{" "}
-                              {complaint.studentName} ({complaint.studentId})
-                            </p>
-                            <p className="text-sm text-gray-600 flex items-center space-x-1">
-                              <Mail className="h-3 w-3" />
-                              <span className="font-medium">Email:</span>{" "}
-                              {complaint.studentEmail}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-sm text-gray-600">
-                              <span className="font-medium">Department:</span>{" "}
-                              {complaint.department}
+                              <span className="font-medium">Student ID:</span> (
+                              {complaint.studentId})
                             </p>
                             <p className="text-sm text-gray-600">
                               <span className="font-medium">Category:</span>{" "}
                               {complaint.category}
                             </p>
+                            <p className="text-sm text-gray-600">
+                              <span className="font-medium">Department:</span>{" "}
+                              {complaint.department}
+                            </p>
+                            {(complaint as any).class && (
+                              <p className="text-sm text-gray-600">
+                                <span className="font-medium">Class:</span>{" "}
+                                <span className="px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded text-xs font-medium">
+                                  {(complaint as any).class}
+                                </span>
+                              </p>
+                            )}
+                            {/* <p className="text-sm text-gray-600 flex items-center space-x-1">
+                            <Mail className="h-3 w-3" />
+                            <span className="font-medium">Email:</span> 
+                            <span>{complaint.studentEmail}</span>
+                          </p> */}
                           </div>
                         </div>
 
@@ -1287,7 +786,7 @@ const AdminDashboard: React.FC = () => {
                               <span>
                                 Created:{" "}
                                 {new Date(
-                                  complaint.createdAt
+                                  complaint.createdAt,
                                 ).toLocaleDateString()}
                               </span>
                             </span>
@@ -1297,7 +796,7 @@ const AdminDashboard: React.FC = () => {
                                 <span>
                                   Updated:{" "}
                                   {new Date(
-                                    complaint.updatedAt
+                                    complaint.updatedAt,
                                   ).toLocaleDateString()}
                                 </span>
                               </span>
@@ -1328,9 +827,17 @@ const AdminDashboard: React.FC = () => {
                   </div>
                 ))}
               </div>
+              <Pagination
+                currentPage={complaintsPage}
+                totalItems={filteredComplaints.length}
+                perPage={PER_PAGE}
+                onPageChange={setComplaintsPage}
+              />
+              </>
             )}
           </div>
         ) : activeTab === "students" ? (
+          /* Students List */
           <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
             <div className="p-6 border-b border-gray-200">
               <h2 className="text-xl font-semibold text-gray-900">
@@ -1338,12 +845,7 @@ const AdminDashboard: React.FC = () => {
               </h2>
             </div>
 
-            {isLoading ? (
-              <div className="p-12 text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="text-gray-500 mt-4">Loading students...</p>
-              </div>
-            ) : filteredStudents.length === 0 ? (
+            {filteredStudents.length === 0 ? (
               <div className="p-12 text-center">
                 <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-500 text-lg">No students found</p>
@@ -1357,7 +859,7 @@ const AdminDashboard: React.FC = () => {
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        ID
+                        Student ID
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Name
@@ -1369,34 +871,38 @@ const AdminDashboard: React.FC = () => {
                         Department
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Password
+                        Class
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
                       </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredStudents.map((student) => (
-                      <tr key={student.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {student.id}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {student.name}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {student.email}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {student.department}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {student.password}
-                        </td>
-                      </tr>
+                    {filteredStudents.slice((studentsPage - 1) * PER_PAGE, studentsPage * PER_PAGE).map((student) => (
+                      <StudentCard
+                        key={student._id}
+                        student={student}
+                        onEdit={refreshStudents}
+                        onDelete={refreshStudents}
+                      />
                     ))}
                   </tbody>
                 </table>
               </div>
             )}
+            <Pagination
+              currentPage={studentsPage}
+              totalItems={filteredStudents.length}
+              perPage={PER_PAGE}
+              onPageChange={setStudentsPage}
+            />
+          </div>
+        ) : activeTab === "reports" ? (
+          <ReportsModule />
+        ) : activeTab === "classes" ? (
+          <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+            <ClassManagement />
           </div>
         ) : (
           <DepartmentManagement />
@@ -1421,29 +927,63 @@ const AdminDashboard: React.FC = () => {
               </div>
 
               <div className="p-6">
+                {/* Student Info */}
+                <div className="mb-4 grid grid-cols-2 gap-2 text-sm bg-gray-50 p-3 rounded-lg">
+                  <div><span className="font-medium text-gray-500">Student:</span> <span className="text-gray-900">{selectedComplaint.studentName} ({selectedComplaint.studentId})</span></div>
+                  <div><span className="font-medium text-gray-500">Email:</span> <span className="text-gray-900">{selectedComplaint.studentEmail}</span></div>
+                  <div><span className="font-medium text-gray-500">Department:</span> <span className="text-gray-900">{selectedComplaint.department}</span></div>
+                  <div><span className="font-medium text-gray-500">Category:</span> <span className="text-gray-900">{selectedComplaint.category}</span></div>
+                  {(selectedComplaint as any).class && (
+                    <div><span className="font-medium text-gray-500">Class:</span> <span className="text-gray-900">{(selectedComplaint as any).class}</span></div>
+                  )}
+                  <div><span className="font-medium text-gray-500">Submitted:</span> <span className="text-gray-900">{new Date(selectedComplaint.createdAt).toLocaleDateString()}</span></div>
+                </div>
+
                 <div className="mb-6">
-                  <h3 className="font-semibold text-gray-900 mb-2">
-                    Current Status
-                  </h3>
-                  <span
-                    className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(
-                      selectedComplaint.status
-                    )}`}
-                  >
+                  <h3 className="font-semibold text-gray-900 mb-2">Current Status</h3>
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(selectedComplaint.status)}`}>
                     {selectedComplaint.status}
                   </span>
                 </div>
 
                 <div className="mb-6">
-                  <h3 className="font-semibold text-gray-900 mb-2">
-                    Complaint Details
-                  </h3>
+                  <h3 className="font-semibold text-gray-900 mb-2">Complaint Details</h3>
                   <div className="bg-gray-50 p-4 rounded-lg">
-                    <p className="text-sm text-gray-700">
-                      {selectedComplaint.description}
-                    </p>
+                    <p className="text-sm text-gray-700">{selectedComplaint.description}</p>
                   </div>
                 </div>
+
+                {/* Attachments */}
+                {selectedComplaint.attachments && selectedComplaint.attachments.length > 0 && (
+                  <div className="mb-6">
+                    <h3 className="font-semibold text-gray-900 mb-3 flex items-center space-x-2">
+                      <Paperclip className="h-4 w-4" />
+                      <span>Attachments ({selectedComplaint.attachments.length})</span>
+                    </h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {selectedComplaint.attachments.map((url, i) => {
+                        const isPdf = url.toLowerCase().endsWith('.pdf');
+                        return isPdf ? (
+                          <a key={i} href={url} target="_blank" rel="noopener noreferrer"
+                            className="flex items-center space-x-2 p-3 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors">
+                            <FileIcon className="h-5 w-5 text-red-500 shrink-0" />
+                            <span className="text-xs text-red-700 truncate">{url.split('/').pop()}</span>
+                          </a>
+                        ) : (
+                          <a key={i} href={url} target="_blank" rel="noopener noreferrer">
+                            <img src={url} alt={`attachment-${i + 1}`}
+                              className="w-full h-28 object-cover rounded-lg border border-gray-200 hover:opacity-80 transition-opacity cursor-pointer"
+                              onError={(e) => {
+                                const el = e.target as HTMLImageElement;
+                                el.parentElement!.innerHTML = '<div class="w-full h-28 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 text-xs border">Image not found</div>';
+                              }}
+                            />
+                          </a>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 <div className="mb-6">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1478,10 +1018,10 @@ const AdminDashboard: React.FC = () => {
                       onClick={() =>
                         handleStatusUpdate(selectedComplaint, "In Progress")
                       }
-                      disabled={isLoading || isEmailSending}
+                      disabled={isEmailSending}
                       className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {isLoading ? "Updating..." : "Mark In Progress"}
+                      Mark In Progress
                     </button>
                   )}
                   {selectedComplaint.status !== "Resolved" && (
@@ -1489,10 +1029,10 @@ const AdminDashboard: React.FC = () => {
                       onClick={() =>
                         handleStatusUpdate(selectedComplaint, "Resolved")
                       }
-                      disabled={isLoading || isEmailSending}
+                      disabled={isEmailSending}
                       className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {isLoading ? "Updating..." : "Mark Resolved"}
+                      Mark Resolved
                     </button>
                   )}
                   <button
@@ -1564,17 +1104,62 @@ const AdminDashboard: React.FC = () => {
                         setNewStudent({
                           ...newStudent,
                           department: e.target.value,
+                          classId: '', // department बदलल्यावर class reset
                         })
                       }
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
-                      <option value="">Select Department</option>
-                      {uniqueDepartments.map((dept) => (
-                        <option key={dept} value={dept}>
-                          {dept}
-                        </option>
-                      ))}
+                      {authState.currentAdmin?.isMainAdmin
+                        ? departments.map((dept) => (
+                            <option key={dept._id} value={dept.name}>
+                              {dept.name} ({dept.code})
+                            </option>
+                          ))
+                        : departments
+                            .filter(
+                              (dept) =>
+                                dept.name ===
+                                authState.currentAdmin?.department,
+                            )
+                            .map((dept) => (
+                              <option key={dept._id} value={dept.name}>
+                                {dept.name} ({dept.code})
+                              </option>
+                            ))}
                     </select>
+                  </div>
+
+                  {/* Class Dropdown — required if classes exist */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Class {classes.length > 0 && <span className="text-red-500">*</span>}
+                    </label>
+                    {classes.length > 0 ? (
+                      <>
+                        <select
+                          value={newStudent.classId}
+                          onChange={(e) => {
+                            setNewStudent({ ...newStudent, classId: e.target.value });
+                            setRegisterClassRequired(false);
+                          }}
+                          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                            registerClassRequired ? 'border-red-400 bg-red-50' : 'border-gray-300'
+                          }`}
+                        >
+                          <option value="">-- Select Class --</option>
+                          {classes.map((c) => (
+                            <option key={c._id} value={c._id}>{c.name}</option>
+                          ))}
+                        </select>
+                        {registerClassRequired && (
+                          <p className="text-red-500 text-xs mt-1">⚠ Class select करणे आवश्यक आहे</p>
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                        ⚠ या department साठी अजून कोणतीही class तयार केलेली नाही. आधी Classes tab मधून class add करा.
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -1598,11 +1183,7 @@ const AdminDashboard: React.FC = () => {
 
                 {registrationSuccess && (
                   <div
-                    className={`mt-4 p-3 rounded-lg ${
-                      registrationSuccess.includes("successfully")
-                        ? "bg-green-50 text-green-800"
-                        : "bg-red-50 text-red-800"
-                    }`}
+                    className={`mt-4 p-3 rounded-lg ${registrationSuccess.includes("successfully") ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800"}`}
                   >
                     {registrationSuccess}
                   </div>
@@ -1622,7 +1203,8 @@ const AdminDashboard: React.FC = () => {
                       setNewStudent({
                         name: "",
                         email: "",
-                        department: authState.currentAdmin?.department || "",
+                        department: "",
+                        classId: "",
                         password: "",
                       });
                     }}

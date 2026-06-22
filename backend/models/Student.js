@@ -1,75 +1,86 @@
-const { db } = require('../config/firebaseAdmin');
-const { FieldValue } = require('firebase-admin/firestore');
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 
-const COLLECTION = 'students';
+const StudentSchema = new mongoose.Schema({
+  name: {
+  type: String,
+  required: [true, 'Name is required'],
+  trim: true,
+  minlength: 3,
+  match: [/^[A-Za-z\s]+$/, 'Name should contain only letters and spaces']
+},
+  email: {
+  type: String,
+  required: [true, 'Email is required'],
+  unique: true,
+  trim: true,
+  lowercase: true,
+  match: [
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+    'Please enter a valid email address'
+  ]
+},
+  studentId: {
+  type: String,
+  required: true,
+  unique: true,
+  trim: true,
+  uppercase: true
+},
+  password: {
+    type: String,
+    required: [true, 'Password is required'],
+    minlength: 6
+  },
+status: {
+  type: String,
+  enum: ['ACTIVE', 'INACTIVE'],
+  default: 'ACTIVE'
+},
+  department: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Department',
+    required: true
+  },
+  class: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Class',
+    default: null
+  },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Admin'
+  },
+  registrationSource: {
+    type: String,
+    enum: ['DEPARTMENT_DASHBOARD', 'MAIN_ADMIN'],
+    default: 'MAIN_ADMIN'
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
+});
 
-class Student {
-    static async create(studentData) {
-        const { email, name, studentId, department, createdBy, registrationSource } = studentData;
-        
-        const studentRef = db.collection(COLLECTION).doc(studentId);
-        await studentRef.set({
-            email: email.toLowerCase(),
-            name,
-            studentId,
-            department,
-            createdBy,
-            registrationSource,
-            createdAt: FieldValue.serverTimestamp(),
-            desertStatus: 'None',
-            desertReason: '',
-            desertDate: null
-        });
-        
-        return studentRef;
-    }
+// Hash password before saving
+StudentSchema.pre('save', async function(next) {
+  if (!this.isModified('password')) return next();
+  
+  try {
+    console.log('Hashing password for student:', this.name);
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    // console.log('Password hashed successfully');
+    next();
+  } catch (error) {
+    // console.error('Password hashing error:', error);
+    next(error);
+  }
+});
 
-    static async findById(studentId) {
-        const doc = await db.collection(COLLECTION).doc(studentId).get();
-        return doc.exists ? { id: doc.id, ...doc.data() } : null;
-    }
+// Method to compare passwords
+StudentSchema.methods.comparePassword = async function(candidatePassword) {
+  return bcrypt.compare(candidatePassword, this.password);
+};
 
-    static async findByEmail(email) {
-        const snapshot = await db.collection(COLLECTION)
-            .where('email', '==', email.toLowerCase())
-            .limit(1)
-            .get();
-        
-        if (snapshot.empty) return null;
-        const doc = snapshot.docs[0];
-        return { id: doc.id, ...doc.data() };
-    }
-
-    static async update(studentId, updateData) {
-        const studentRef = db.collection(COLLECTION).doc(studentId);
-        await studentRef.update({
-            ...updateData,
-            updatedAt: FieldValue.serverTimestamp()
-        });
-        return studentRef;
-    }
-
-    static async delete(studentId) {
-        await db.collection(COLLECTION).doc(studentId).delete();
-    }
-
-    static async list(filters = {}) {
-        let query = db.collection(COLLECTION);
-        
-        if (filters.department) {
-            query = query.where('department', '==', filters.department);
-        }
-        
-        if (filters.desertStatus) {
-            query = query.where('desertStatus', '==', filters.desertStatus);
-        }
-
-        const snapshot = await query.get();
-        return snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        }));
-    }
-}
-
-module.exports = Student;
+module.exports = mongoose.model('Student', StudentSchema);

@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: student-support-portal
+    env: node
+    buildCommand: cd project && npm install && npm run build
+    startCommand: cd backend && npm install && node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASSWORD
+        sync: false

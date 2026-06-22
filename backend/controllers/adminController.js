@@ -1,167 +1,233 @@
-const Admin = require('../models/Admin');
-const jwt = require('jsonwebtoken');
+const Admin = require("../models/Admin");
+const Student = require("../models/Student");
+const Department = require("../models/Department");
+const bcrypt = require("bcryptjs");
+const {
+  sendRegistrationEmail,
+  sendAdminNotificationEmail,
+} = require("../utils/emailService");
 
-// Generate JWT
-const generateToken = (id) => {
-    return jwt.sign({ id }, process.env.JWT_SECRET, {
-        expiresIn: '30d'
-    });
-};
+// Register a new student (by admin)
+exports.registerStudent = async (req, res) => {
+  try {
+    const { name, email, studentId, departmentId, department, password } =
+      req.body;
 
-// @desc    Auth admin & get token
-// @route   POST /api/admin/login
-// @access  Public
-exports.loginAdmin = async (req, res) => {
-    try {
-        const { email, password } = req.body;
+    const finalDepartmentId = departmentId || department;
 
-        // Check for admin
-        const admin = await Admin.findOne({ email }).populate('department', 'name code');
-        
-        if (admin && (await admin.matchPassword(password))) {
-            res.json({
-                _id: admin._id,
-                name: admin.name,
-                email: admin.email,
-                isAdmin: admin.isAdmin,
-                department: admin.department,
-                isMainAdmin: admin.isMainAdmin,
-                token: generateToken(admin._id)
-            });
-        } else {
-            res.status(401).json({ message: 'Invalid email or password' });
-        }
-    } catch (error) {
-        res.status(500).json({ message: 'Server error', error: error.message });
+    // Check if department exists
+    const departmentDoc = await Department.findById(finalDepartmentId);
+
+    if (!departmentDoc) {
+      return res.status(404).json({
+        message: "Department not found",
+      });
     }
-};
 
-// @desc    Register a new admin
-// @route   POST /api/admin
-// @access  Private/MainAdmin
-exports.registerAdmin = async (req, res) => {
+    // Check if student already exists
+    const existingStudent = await Student.findOne({
+      $or: [{ email }, { studentId }],
+    });
+    if (existingStudent) {
+      return res.status(400).json({
+        message: "Student with this email or ID already exists",
+      });
+    }
+
+    // Create new student
+    const student = new Student({
+      name,
+      email,
+      studentId,
+      department: departmentDoc._id,
+      password, // Will be hashed by the pre-save hook in the Student model
+      createdBy: req.user ? req.user._id : null,
+      registrationSource:
+        req.user?.role === "DEPARTMENT_ADMIN"
+          ? "DEPARTMENT_DASHBOARD"
+          : "MAIN_ADMIN",
+    });
+
+    // Save student to database
+    await student.save();
+
+    // Get department name for email
+    const departmentName = departmentDoc.name;
+
+    // Send registration email to student
+    let studentEmailSent = false;
     try {
-        const { name, email, password, department, isMainAdmin } = req.body;
+      await sendRegistrationEmail({
+        name,
+        email,
+        studentId,
+        department: departmentName,
+        originalPassword: password, // Send the original password in the email
+      });
+      console.log("Registration email sent to student:", email);
+      studentEmailSent = true;
+    } catch (emailError) {
+      console.error(
+        "Failed to send registration email to student:",
+        emailError,
+      );
+      // Continue with the response even if email fails
+    }
 
-        // Check if admin exists
-        const adminExists = await Admin.findOne({ email });
-        if (adminExists) {
-            return res.status(400).json({ message: 'Admin already exists' });
-        }
+    // Send notification email to admin
+    let adminEmailSent = false;
+    try {
+      // Get admin info - either the current admin or a main admin
+      let admin;
+      if (req.user && req.user._id) {
+        admin = await Admin.findById(req.user._id);
+      }
 
-        // Create admin
-        const admin = await Admin.create({
+      // If no specific admin, get a main admin
+      if (!admin) {
+        admin = await Admin.findOne({ isMainAdmin: true });
+      }
+
+      if (admin && admin.email) {
+        await sendAdminNotificationEmail({
+          student: {
             name,
             email,
-            password,
-            department,
-            isMainAdmin: isMainAdmin || false
+            studentId,
+            department: departmentName,
+          },
+          admin: {
+            name: admin.name,
+            username: admin.username,
+            email: admin.email,
+          },
         });
-
-        if (admin) {
-            res.status(201).json({
-                _id: admin._id,
-                name: admin.name,
-                email: admin.email,
-                isAdmin: admin.isAdmin,
-                department: admin.department,
-                isMainAdmin: admin.isMainAdmin,
-                token: generateToken(admin._id)
-            });
-        } else {
-            res.status(400).json({ message: 'Invalid admin data' });
-        }
-    } catch (error) {
-        res.status(500).json({ message: 'Server error', error: error.message });
+        console.log("Notification email sent to admin:", admin.email);
+        adminEmailSent = true;
+      }
+    } catch (emailError) {
+      console.error("Failed to send notification email to admin:", emailError);
+      // Continue with the response even if email fails
     }
+
+    // Remove password from response
+    const studentResponse = student.toObject();
+    delete studentResponse.password;
+
+    res.status(201).json({
+      ...studentResponse,
+      studentEmailSent,
+      adminEmailSent,
+    });
+  } catch (error) {
+    console.error("Error registering student:", error);
+    res
+      .status(400)
+      .json({ message: "Error registering student", error: error.message });
+  }
 };
 
-// @desc    Get admin profile
-// @route   GET /api/admin/profile
-// @access  Private
-exports.getAdminProfile = async (req, res) => {
-    try {
-        const admin = await Admin.findById(req.user._id).populate('department', 'name code');
-        if (admin) {
-            res.json({
-                _id: admin._id,
-                name: admin.name,
-                email: admin.email,
-                isAdmin: admin.isAdmin,
-                department: admin.department,
-                isMainAdmin: admin.isMainAdmin
-            });
-        } else {
-            res.status(404).json({ message: 'Admin not found' });
-        }
-    } catch (error) {
-        res.status(500).json({ message: 'Server error', error: error.message });
+// Register Department Admin
+exports.registerDepartmentAdmin = async (req, res) => {
+  try {
+    const { name, username, email, password, departmentId } = req.body;
+
+    if (!name || !username || !email || !password || !departmentId) {
+      return res.status(400).json({
+        message: "All fields are required",
+      });
     }
+
+    // Department exists?
+    const department = await Department.findById(departmentId);
+
+    if (!department) {
+      return res.status(404).json({
+        message: "Department not found",
+      });
+    }
+
+    // Username already exists?
+    const existingUsername = await Admin.findOne({
+      username: username.trim(),
+    });
+
+    if (existingUsername) {
+      return res.status(400).json({
+        message: "Username already exists",
+      });
+    }
+
+    // Email already exists?
+    const existingEmail = await Admin.findOne({
+      email: email.toLowerCase(),
+    });
+
+    if (existingEmail) {
+      return res.status(400).json({
+        message: "Email already exists",
+      });
+    }
+
+    // Create Department Admin
+    const admin = new Admin({
+      name,
+      username,
+      email,
+      password,
+      department: department._id,
+      role: "DEPARTMENT_ADMIN",
+      isMainAdmin: false,
+    });
+
+    await admin.save();
+
+    await admin.populate("department", "name code");
+
+    const response = admin.toObject();
+    delete response.password;
+
+    res.status(201).json({
+      message: "Department admin created successfully",
+      admin: response,
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      message: "Error creating department admin",
+      error: error.message,
+    });
+  }
 };
 
-// @desc    Update admin profile
-// @route   PUT /api/admin/profile
-// @access  Private
-exports.updateAdminProfile = async (req, res) => {
-    try {
-        const admin = await Admin.findById(req.user._id);
-
-        if (admin) {
-            admin.name = req.body.name || admin.name;
-            admin.email = req.body.email || admin.email;
-            
-            if (req.body.password) {
-                admin.password = req.body.password;
-            }
-
-            const updatedAdmin = await admin.save();
-
-            res.json({
-                _id: updatedAdmin._id,
-                name: updatedAdmin.name,
-                email: updatedAdmin.email,
-                isAdmin: updatedAdmin.isAdmin,
-                department: updatedAdmin.department,
-                isMainAdmin: updatedAdmin.isMainAdmin,
-                token: generateToken(updatedAdmin._id)
-            });
-        } else {
-            res.status(404).json({ message: 'Admin not found' });
-        }
-    } catch (error) {
-        res.status(500).json({ message: 'Server error', error: error.message });
-    }
-};
-
-// @desc    Get all admins
-// @route   GET /api/admin
-// @access  Private/MainAdmin
+// Get all admins
 exports.getAdmins = async (req, res) => {
-    try {
-        const admins = await Admin.find({}).populate('department', 'name code');
-        res.json(admins);
-    } catch (error) {
-        res.status(500).json({ message: 'Server error', error: error.message });
-    }
+  try {
+    const admins = await Admin.find()
+      .select("-password")
+      .populate("department", "name code");
+    res.status(200).json(admins);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error fetching admins", error: error.message });
+  }
 };
 
-// @desc    Delete admin
-// @route   DELETE /api/admin/:id
-// @access  Private/MainAdmin
-exports.deleteAdmin = async (req, res) => {
-    try {
-        const admin = await Admin.findById(req.params.id);
-
-        if (admin) {
-            if (admin.isMainAdmin) {
-                return res.status(400).json({ message: 'Cannot delete main admin' });
-            }
-            await admin.remove();
-            res.json({ message: 'Admin removed' });
-        } else {
-            res.status(404).json({ message: 'Admin not found' });
-        }
-    } catch (error) {
-        res.status(500).json({ message: 'Server error', error: error.message });
+// Get admin by ID
+exports.getAdminById = async (req, res) => {
+  try {
+    const admin = await Admin.findById(req.params.id)
+      .select("-password")
+      .populate("department", "name code");
+    if (!admin) {
+      return res.status(404).json({ message: "Admin not found" });
     }
+    res.status(200).json(admin);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error fetching admin", error: error.message });
+  }
 };

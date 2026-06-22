@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2563eb"/>
+      <stop offset="100%" style="stop-color:#7c3aed"/>
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fbbf24"/>
+      <stop offset="100%" style="stop-color:#f97316"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background circle -->
+  <circle cx="50" cy="50" r="48" fill="url(#bgGrad)"/>
+
+  <!-- Graduation Cap diamond -->
+  <polygon points="50,18 78,30 50,42 22,30" fill="white" opacity="0.95"/>
+  <!-- Left pole -->
+  <rect x="22" y="30" width="5" height="14" rx="2" fill="white" opacity="0.85"/>
+  <!-- Tassel -->
+  <line x1="78" y1="30" x2="78" y2="41" stroke="url(#goldGrad)" stroke-width="2.5" stroke-linecap="round"/>
+  <circle cx="78" cy="44" r="3" fill="url(#goldGrad)"/>
+
+  <!-- Shield -->
+  <path d="M50 48 L64 54 L64 64 Q64 74 50 79 Q36 74 36 64 L36 54 Z" fill="url(#goldGrad)"/>
+  <!-- Checkmark -->
+  <polyline points="43,64 48,70 58,57" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>
