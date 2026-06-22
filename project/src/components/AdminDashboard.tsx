@@ -54,13 +54,6 @@ const AdminDashboard: React.FC = () => {
   const [complaintsPage, setComplaintsPage] = useState(1);
   const [studentsPage, setStudentsPage] = useState(1);
 
-  // Department Admin च्या department चा _id — classes fetch साठी
-  const adminDeptId = useMemo(() => {
-    return departments.find(d => d.name === authState.currentAdmin?.department)?._id;
-  }, [departments, authState.currentAdmin]);
-
-  const { classes } = useClasses(adminDeptId);
-
   const stats: ComplaintStats = useMemo(() => {
     const today = new Date().toDateString();
     return {
@@ -442,28 +435,12 @@ const AdminDashboard: React.FC = () => {
               <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Total Classes</p>
-                    <p className="text-2xl font-bold text-purple-600">{classes.length}</p>
+                    <p className="text-sm font-medium text-gray-600">Classes</p>
+                    <p className="text-2xl font-bold text-purple-600">—</p>
                   </div>
                   <GraduationCap className="h-8 w-8 text-purple-600" />
                 </div>
               </div>
-              {classes.slice(0, 4).map((c) => (
-                <div key={c._id} className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600 truncate max-w-[100px]">{c.name}</p>
-                      <p className="text-2xl font-bold text-purple-600">
-                        {students.filter(s => {
-                          const sc = typeof (s as any).class === 'object' ? (s as any).class?.name : (s as any).class;
-                          return sc === c.name;
-                        }).length}
-                      </p>
-                    </div>
-                    <GraduationCap className="h-8 w-8 text-purple-400" />
-                  </div>
-                </div>
-              ))}
             </>
           ) : activeTab === "reports" ? (
             <></>
@@ -600,22 +577,7 @@ const AdminDashboard: React.FC = () => {
               </select>
             </div>
 
-            {/* Class Filter */}
-            {classes.length > 0 && (
-              <div className="relative">
-                <GraduationCap className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <select
-                  value={classFilter}
-                  onChange={(e) => setClassFilter(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
-                >
-                  <option value="all">All Classes</option>
-                  {classes.map((c) => (
-                    <option key={c._id} value={c.name}>{c.name}</option>
-                  ))}
-                </select>
-              </div>
-            )}
+
 
             {activeTab === "complaints" && (
               <div className="relative">
