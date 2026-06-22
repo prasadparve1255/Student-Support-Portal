@@ -1,12 +1,20 @@
 import React, { useState } from 'react';
-import { Plus, Edit, Trash2, X, GraduationCap } from 'lucide-react';
+import { Plus, Edit, Trash2, X, GraduationCap, Users } from 'lucide-react';
 import { useClasses } from '../hooks/useClasses';
+import { useStudents } from '../hooks/useStudents';
 import Pagination from './Pagination';
 
 const PER_PAGE = 10;
 
 const ClassManagement: React.FC = () => {
   const { classes, loading, error, createClass, updateClass, deleteClass } = useClasses();
+  const { students } = useStudents();
+
+  const getStudentCount = (className: string) =>
+    students.filter(s => {
+      const sc = typeof (s as any).class === 'object' ? (s as any).class?.name : (s as any).class;
+      return sc === className;
+    }).length;
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<{ _id: string; name: string; description?: string } | null>(null);
   const [form, setForm] = useState({ name: '', description: '' });
@@ -101,15 +109,16 @@ const ClassManagement: React.FC = () => {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">#</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Class Name</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
+              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Students</th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
             {loading ? (
-              <tr><td colSpan={4} className="px-6 py-8 text-center text-gray-400">Loading...</td></tr>
+              <tr><td colSpan={5} className="px-6 py-8 text-center text-gray-400">Loading...</td></tr>
             ) : classes.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-6 py-12 text-center">
+                <td colSpan={5} className="px-6 py-12 text-center">
                   <GraduationCap className="h-10 w-10 text-gray-300 mx-auto mb-3" />
                   <p className="text-gray-400">No classes yet. Add your first class.</p>
                 </td>
@@ -119,6 +128,12 @@ const ClassManagement: React.FC = () => {
                 <td className="px-6 py-4 text-sm text-gray-500">{(page - 1) * PER_PAGE + i + 1}</td>
                 <td className="px-6 py-4 text-sm font-medium text-gray-900">{c.name}</td>
                 <td className="px-6 py-4 text-sm text-gray-500">{c.description || '—'}</td>
+                <td className="px-6 py-4 text-center">
+                  <span className="inline-flex items-center space-x-1 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-semibold">
+                    <Users className="h-3.5 w-3.5" />
+                    <span>{getStudentCount(c.name)}</span>
+                  </span>
+                </td>
                 <td className="px-6 py-4 text-right space-x-3">
                   <button onClick={() => openEdit(c)} className="text-blue-600 hover:text-blue-800">
                     <Edit className="h-4 w-4" />
