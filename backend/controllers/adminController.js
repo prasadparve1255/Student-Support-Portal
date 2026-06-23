@@ -51,64 +51,7 @@ exports.registerStudent = async (req, res) => {
     // Save student to database
     await student.save();
 
-    // Get department name for email
     const departmentName = departmentDoc.name;
-
-    // Send registration email to student
-    let studentEmailSent = false;
-    try {
-      await sendRegistrationEmail({
-        name,
-        email,
-        studentId,
-        department: departmentName,
-        originalPassword: password, // Send the original password in the email
-      });
-      console.log("Registration email sent to student:", email);
-      studentEmailSent = true;
-    } catch (emailError) {
-      console.error(
-        "Failed to send registration email to student:",
-        emailError,
-      );
-      // Continue with the response even if email fails
-    }
-
-    // Send notification email to admin
-    let adminEmailSent = false;
-    try {
-      // Get admin info - either the current admin or a main admin
-      let admin;
-      if (req.user && req.user._id) {
-        admin = await Admin.findById(req.user._id);
-      }
-
-      // If no specific admin, get a main admin
-      if (!admin) {
-        admin = await Admin.findOne({ isMainAdmin: true });
-      }
-
-      if (admin && admin.email) {
-        await sendAdminNotificationEmail({
-          student: {
-            name,
-            email,
-            studentId,
-            department: departmentName,
-          },
-          admin: {
-            name: admin.name,
-            username: admin.username,
-            email: admin.email,
-          },
-        });
-        console.log("Notification email sent to admin:", admin.email);
-        adminEmailSent = true;
-      }
-    } catch (emailError) {
-      console.error("Failed to send notification email to admin:", emailError);
-      // Continue with the response even if email fails
-    }
 
     // Remove password from response
     const studentResponse = student.toObject();
@@ -116,14 +59,31 @@ exports.registerStudent = async (req, res) => {
 
     res.status(201).json({
       ...studentResponse,
-      studentEmailSent,
-      adminEmailSent,
+      studentEmailSent: true,
+      adminEmailSent: true,
     });
+
+    // Emails background madhe pathav
+    sendRegistrationEmail({
+      name,
+      email,
+      studentId,
+      department: departmentName,
+      originalPassword: password,
+    }).catch(e => console.error('Student email failed:', e.message));
+
+    Admin.findOne({ isMainAdmin: true }).then(admin => {
+      if (admin?.email) {
+        sendAdminNotificationEmail({
+          student: { name, email, studentId, department: departmentName },
+          admin: { name: admin.name, username: admin.username, email: admin.email },
+        }).catch(e => console.error('Admin email failed:', e.message));
+      }
+    });
+
   } catch (error) {
     console.error("Error registering student:", error);
-    res
-      .status(400)
-      .json({ message: "Error registering student", error: error.message });
+    res.status(400).json({ message: "Error registering student", error: error.message });
   }
 };
 

@@ -112,20 +112,6 @@ exports.registerStudent = async (req, res) => {
       } catch (e) { /* ignore */ }
     }
 
-    // Send registration email
-    try {
-      await sendRegistrationEmail({
-        name: student.name,
-        email: student.email,
-        studentId: student.studentId,
-        originalPassword: password,
-        department: departmentDoc.name,
-        className,
-      });
-    } catch (emailError) {
-      console.error("Email sending failed:", emailError.message);
-    }
-
     res.status(201).json({
       studentId: student.studentId,
       name: student.name,
@@ -133,6 +119,17 @@ exports.registerStudent = async (req, res) => {
       department: departmentDoc.name,
       _id: student._id,
     });
+
+    // Email background madhe pathav — response hold karu nako
+    sendRegistrationEmail({
+      name: student.name,
+      email: student.email,
+      studentId: student.studentId,
+      originalPassword: password,
+      department: departmentDoc.name,
+      className,
+    }).catch(e => console.error('Registration email failed:', e.message));
+
   } catch (error) {
     console.error("Student registration error:", error);
     res.status(400).json({

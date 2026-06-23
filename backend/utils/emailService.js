@@ -1,19 +1,23 @@
 const nodemailer = require('nodemailer');
 
+// Gmail App Password madhe spaces astil tar strip kar
+const emailUser = process.env.EMAIL_USER;
+const emailPass = process.env.EMAIL_PASSWORD ? process.env.EMAIL_PASSWORD.replace(/\s/g, '') : '';
+
+if (!emailUser || !emailPass) {
+  console.warn('⚠️ Email service not configured. Set EMAIL_USER and EMAIL_PASSWORD.');
+}
+
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
   port: 465,
   secure: true,
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD
+    user: emailUser,
+    pass: emailPass
   },
   tls: { rejectUnauthorized: false }
 });
-
-if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
-  console.warn('⚠️ Email service not configured. Set EMAIL_USER and EMAIL_PASSWORD.');
-}
 
 /**
  * Send registration email to student
