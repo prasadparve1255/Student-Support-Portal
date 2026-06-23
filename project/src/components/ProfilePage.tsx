@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { useAuthContext as useAuth } from '../context/AuthContext';
 import { useComplaints } from '../hooks/useComplaints';
+import API_BASE from '../services/api';
 
 interface ProfilePageProps {
   onBack: () => void;
@@ -70,7 +71,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
     setIsLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/auth/change-password', {
+      const response = await fetch(`${API_BASE}/auth/change-password`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

@@ -9,7 +9,7 @@ const {
 const Admin = require("../models/Admin");
 
 // Allowed fields for student update (prevent mass assignment)
-const ALLOWED_UPDATE_FIELDS = ["name", "email", "password", "status", "class"];
+const ALLOWED_UPDATE_FIELDS = ["name", "email", "status", "class"];
 
 // Register new student
 exports.registerStudent = async (req, res) => {
@@ -228,5 +228,23 @@ exports.deleteStudent = async (req, res) => {
     res.status(200).json({ message: "Student deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: "Error deleting student" });
+  }
+};
+
+// Admin reset student password
+exports.resetStudentPassword = async (req, res) => {
+  try {
+    const { password } = req.body;
+    if (!password || password.length < 6)
+      return res.status(400).json({ message: 'Password must be at least 6 characters' });
+    const student = await Student.findById(req.params.id);
+    if (!student) return res.status(404).json({ message: 'Student not found' });
+    const salt = await bcrypt.genSalt(10);
+    student.password = await bcrypt.hash(password, salt);
+    student.markModified('password');
+    await student.save({ validateModifiedOnly: true });
+    res.json({ message: 'Password reset successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error resetting password', error: error.message });
   }
 };

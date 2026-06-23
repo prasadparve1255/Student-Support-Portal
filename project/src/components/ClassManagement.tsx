@@ -2,12 +2,22 @@ import React, { useState } from 'react';
 import { Plus, Edit, Trash2, X, GraduationCap, Users } from 'lucide-react';
 import { useClasses } from '../hooks/useClasses';
 import { useStudents } from '../hooks/useStudents';
+import { useDepartments } from '../hooks/useDepartments';
+import { useAuthContext as useAuth } from '../context/AuthContext';
 import Pagination from './Pagination';
 
 const PER_PAGE = 10;
 
 const ClassManagement: React.FC = () => {
-  const { classes, loading, error, createClass, updateClass, deleteClass } = useClasses();
+  const { authState } = useAuth();
+  const { departments } = useDepartments();
+  const isMainAdmin = authState.currentAdmin?.isMainAdmin;
+
+  // Main Admin: selected dept for viewing/creating classes
+  const [selectedDeptId, setSelectedDeptId] = useState<string>('');
+
+  const deptIdForFetch = isMainAdmin ? (selectedDeptId || undefined) : undefined;
+  const { classes, loading, error, createClass, updateClass, deleteClass } = useClasses(deptIdForFetch);
   const { students } = useStudents();
 
   const getStudentCount = (className: string) =>
@@ -15,6 +25,7 @@ const ClassManagement: React.FC = () => {
       const sc = typeof (s as any).class === 'object' ? (s as any).class?.name : (s as any).class;
       return sc === className;
     }).length;
+
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<{ _id: string; name: string; description?: string } | null>(null);
   const [form, setForm] = useState({ name: '', description: '' });
@@ -42,13 +53,20 @@ const ClassManagement: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim()) return;
+    if (isMainAdmin && !editing && !selectedDeptId) {
+      showMsg('error', 'Please select a department first');
+      return;
+    }
     setSubmitting(true);
     try {
       if (editing) {
         await updateClass(editing._id, form);
         showMsg('success', 'Class updated successfully');
       } else {
-        await createClass(form);
+        // Pass departmentId for Main Admin
+        const payload: any = { ...form };
+        if (isMainAdmin) payload.departmentId = selectedDeptId;
+        await createClass(payload);
         showMsg('success', 'Class created successfully');
         setPage(1);
       }
@@ -93,6 +111,22 @@ const ClassManagement: React.FC = () => {
           <span>Add Class</span>
         </button>
       </div>
+
+      {/* Main Admin — department selector */}
+      {isMainAdmin && (
+        <div className="mb-4">
+          <select
+            value={selectedDeptId}
+            onChange={e => { setSelectedDeptId(e.target.value); setPage(1); }}
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+          >
+            <option value="">All Departments</option>
+            {departments.map(d => (
+              <option key={d._id} value={d._id}>{d.name}</option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {message.text && (
         <div className={`p-3 mb-4 rounded-lg text-sm ${message.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
@@ -161,6 +195,16 @@ const ClassManagement: React.FC = () => {
               </button>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
+              {/* Main Admin — show selected dept info */}
+              {isMainAdmin && !editing && (
+                <div className="p-3 bg-purple-50 rounded-lg text-sm text-purple-700">
+                  <span className="font-medium">Department: </span>
+                  {selectedDeptId
+                    ? departments.find(d => d._id === selectedDeptId)?.name || selectedDeptId
+                    : <span className="text-red-500">No department selected — go back and select one</span>
+                  }
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Class Name *</label>
                 <input

@@ -34,36 +34,45 @@ exports.getClasses = async (req, res) => {
   }
 };
 
-// Create class — Department Admin only
+// Create class — Department Admin or Main Admin
 exports.createClass = async (req, res) => {
   try {
-    const { name, description } = req.body;
+    const { name, description, departmentId } = req.body;
 
     if (!name || !name.trim()) {
       return res.status(400).json({ message: 'Class name is required' });
     }
 
-    if (req.user.role !== 'DEPARTMENT_ADMIN') {
-      return res.status(403).json({ message: 'Only Department Admins can create classes' });
+    if (!['DEPARTMENT_ADMIN', 'MAIN_ADMIN'].includes(req.user.role)) {
+      return res.status(403).json({ message: 'Only Admins can create classes' });
     }
 
-    const departmentId = getDeptId(req.user.department);
-    if (!departmentId) {
-      return res.status(400).json({ message: 'Department not assigned to this admin' });
+    let departmentObjId;
+    if (req.user.role === 'MAIN_ADMIN') {
+      // Main Admin must pass departmentId in body
+      if (!departmentId) {
+        return res.status(400).json({ message: 'departmentId is required for Main Admin' });
+      }
+      if (!mongoose.Types.ObjectId.isValid(departmentId)) {
+        return res.status(400).json({ message: 'Invalid departmentId' });
+      }
+      departmentObjId = departmentId;
+    } else {
+      departmentObjId = getDeptId(req.user.department);
+      if (!departmentObjId) {
+        return res.status(400).json({ message: 'Department not assigned to this admin' });
+      }
     }
 
     // Duplicate check
-    const existing = await Class.findOne({
-      name: name.trim(),
-      department: departmentId,
-    });
+    const existing = await Class.findOne({ name: name.trim(), department: departmentObjId });
     if (existing) {
       return res.status(400).json({ message: `Class "${name.trim()}" already exists in this department` });
     }
 
     const newClass = await Class.create({
       name: name.trim(),
-      department: departmentId,
+      department: departmentObjId,
       description: description ? description.trim() : '',
     });
 
@@ -82,12 +91,14 @@ exports.updateClass = async (req, res) => {
     const classDoc = await Class.findById(req.params.id);
     if (!classDoc) return res.status(404).json({ message: 'Class not found' });
 
+    // Department Admin can only update their own dept's classes
     if (req.user.role === 'DEPARTMENT_ADMIN') {
       const deptId = getDeptId(req.user.department);
       if (classDoc.department.toString() !== deptId) {
         return res.status(403).json({ message: 'Access denied' });
       }
     }
+    // Main Admin can update any class
 
     if (name && name.trim()) classDoc.name = name.trim();
     if (description !== undefined) classDoc.description = description.trim();
@@ -107,12 +118,14 @@ exports.deleteClass = async (req, res) => {
     const classDoc = await Class.findById(req.params.id);
     if (!classDoc) return res.status(404).json({ message: 'Class not found' });
 
+    // Department Admin can only delete their own dept's classes
     if (req.user.role === 'DEPARTMENT_ADMIN') {
       const deptId = getDeptId(req.user.department);
       if (classDoc.department.toString() !== deptId) {
         return res.status(403).json({ message: 'Access denied' });
       }
     }
+    // Main Admin can delete any class
 
     await classDoc.deleteOne();
     res.json({ message: 'Class deleted successfully' });

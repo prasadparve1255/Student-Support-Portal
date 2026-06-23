@@ -29,6 +29,7 @@ interface StudentHook {
     updateStudent: (id: string, data: Partial<Student>) => Promise<void>;
     deleteStudent: (id: string) => Promise<void>;
     refreshStudents: () => Promise<void>;
+    resetStudentPassword: (id: string, password: string) => Promise<void>;
 }
 
 export const useStudents = (): StudentHook => {
@@ -128,6 +129,17 @@ export const useStudents = (): StudentHook => {
         }
     };
 
+    const resetStudentPassword = async (id: string, password: string) => {
+        try {
+            await axios.put(`${API_BASE}/students/${id}/reset-password`, { password }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+        } catch (err: any) {
+            const errorMsg = err.response?.data?.message || 'Error resetting password';
+            throw new Error(errorMsg);
+        }
+    };
+
     const deleteStudent = async (id: string) => {
         try {
             await axios.delete(`${API_BASE}/students/${id}`, {
@@ -150,7 +162,8 @@ export const useStudents = (): StudentHook => {
         getStudentsByDepartment,
         updateStudent,
         deleteStudent,
-        refreshStudents: fetchStudents
+        refreshStudents: fetchStudents,
+        resetStudentPassword
     };
 };
 

@@ -276,15 +276,13 @@ const AdminDashboard: React.FC = () => {
             </p>
           </div>
           <div className="flex items-center space-x-4">
-            {authState.currentAdmin && !authState.currentAdmin.isMainAdmin && (
-              <button
-                onClick={() => setShowRegisterModal(true)}
-                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors duration-200"
-              >
-                <Users className="h-4 w-4" />
-                <span>Register Student</span>
-              </button>
-            )}
+            <button
+              onClick={() => setShowRegisterModal(true)}
+              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors duration-200"
+            >
+              <Users className="h-4 w-4" />
+              <span>Register Student</span>
+            </button>
             <button
               onClick={handleBackup}
               disabled={isBackingUp}
@@ -514,18 +512,16 @@ const AdminDashboard: React.FC = () => {
                 Departments
               </button>
             )}
-            {!authState.currentAdmin?.isMainAdmin && (
-              <button
-                onClick={() => setActiveTab("classes")}
-                className={`px-4 py-2 font-medium rounded-lg transition-colors ${
-                  activeTab === "classes"
-                    ? "bg-purple-600 text-white"
-                    : "text-gray-600 hover:bg-gray-100"
-                }`}
-              >
-                Classes
-              </button>
-            )}
+            <button
+              onClick={() => setActiveTab("classes")}
+              className={`px-4 py-2 font-medium rounded-lg transition-colors ${
+                activeTab === "classes"
+                  ? "bg-purple-600 text-white"
+                  : "text-gray-600 hover:bg-gray-100"
+              }`}
+            >
+              Classes
+            </button>
             <button
               onClick={() => setActiveTab("reports")}
               className={`px-4 py-2 font-medium rounded-lg transition-colors ${

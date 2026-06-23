@@ -43,7 +43,7 @@ const StudentCard: React.FC<StudentCardProps> = ({ student, onEdit, onDelete }) 
     password: "",
   });
 
-  const { updateStudent, deleteStudent } = useStudents();
+  const { updateStudent, deleteStudent, resetStudentPassword } = useStudents();
   const { departments } = useDepartments();
   const { classes } = useClasses(editFormData.department);
 
@@ -67,9 +67,11 @@ const StudentCard: React.FC<StudentCardProps> = ({ student, onEdit, onDelete }) 
       await updateStudent(student._id, {
         name: editFormData.name,
         email: editFormData.email,
-        password: editFormData.password || undefined,
         class: editFormData.classId || null,
       } as any);
+      if (editFormData.password) {
+        await resetStudentPassword(student._id, editFormData.password);
+      }
       setShowEditModal(false);
       if (onEdit) onEdit();
     } catch (error) {

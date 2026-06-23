@@ -10,6 +10,7 @@ router.post('/', verifyToken, isAdmin, studentController.registerStudent);
 router.get('/', verifyToken, isAdmin, studentController.getStudents);
 router.get('/:id', verifyToken, isAdmin, studentController.getStudentById);
 router.put('/:id', verifyToken, isAdmin, studentController.updateStudent);
+router.put('/:id/reset-password', verifyToken, isAdmin, studentController.resetStudentPassword);
 router.delete('/:id', verifyToken, isAdmin, studentController.deleteStudent);
 
 module.exports = router;
