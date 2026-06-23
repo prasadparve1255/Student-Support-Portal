@@ -46,7 +46,7 @@ const AdminDashboard: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [departmentFilter, setDepartmentFilter] = useState<string>("all");
-  const [classFilter, setClassFilter] = useState<string>("all");
+  const [classFilter] = useState<string>("all");
   const [dateFilter, setDateFilter] = useState<string>("");
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
   const [adminResponse, setAdminResponse] = useState("");
