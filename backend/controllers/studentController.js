@@ -239,10 +239,10 @@ exports.resetStudentPassword = async (req, res) => {
       return res.status(400).json({ message: 'Password must be at least 6 characters' });
     const student = await Student.findById(req.params.id);
     if (!student) return res.status(404).json({ message: 'Student not found' });
+    // findByIdAndUpdate वापरतो — pre-save hook bypass
     const salt = await bcrypt.genSalt(10);
-    student.password = await bcrypt.hash(password, salt);
-    student.markModified('password');
-    await student.save({ validateModifiedOnly: true });
+    const hashed = await bcrypt.hash(password, salt);
+    await Student.findByIdAndUpdate(req.params.id, { password: hashed });
     res.json({ message: 'Password reset successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Error resetting password', error: error.message });

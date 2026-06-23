@@ -1,17 +1,18 @@
 const nodemailer = require('nodemailer');
 
-// Create a transporter object
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASSWORD
-  }
+  },
+  tls: { rejectUnauthorized: false }
 });
 
-// Validate email configuration
 if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
-  console.warn('Email service not configured. Set EMAIL_USER and EMAIL_PASSWORD environment variables.');
+  console.warn('⚠️ Email service not configured. Set EMAIL_USER and EMAIL_PASSWORD.');
 }
 
 /**

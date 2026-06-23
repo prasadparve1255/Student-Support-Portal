@@ -210,44 +210,51 @@ exports.changePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
     if (!currentPassword || !newPassword)
-      return res.status(400).json({ message: "Current and new password are required" });
+      return res.status(400).json({ message: 'Current and new password are required' });
     if (newPassword.length < 6)
-      return res.status(400).json({ message: "New password must be at least 6 characters" });
+      return res.status(400).json({ message: 'New password must be at least 6 characters' });
 
     const role = req.user.role;
     const userId = req.user._id || req.user.id;
-    const isAdminRole = ["MAIN_ADMIN", "DEPARTMENT_ADMIN"].includes(role);
+    const isAdminRole = ['MAIN_ADMIN', 'DEPARTMENT_ADMIN'].includes(role);
+
+    let emailData = null;
 
     if (isAdminRole) {
       const admin = await Admin.findById(userId);
-      if (!admin) return res.status(404).json({ message: "Admin not found" });
+      if (!admin) return res.status(404).json({ message: 'Admin not found' });
       const isMatch = await admin.comparePassword(currentPassword);
       if (!isMatch)
-        return res.status(400).json({ message: "Current password is incorrect" });
-      admin.password = newPassword;
-      await admin.save();
-      // Email background मध्ये पाठव — response hold करू नको
-      sendPasswordChangeEmail({ name: admin.name, email: admin.email, newPassword, role: req.user.role })
-        .catch(e => console.error('Password change email failed:', e.message));
+        return res.status(400).json({ message: 'Current password is incorrect' });
+      // Hash manually + findByIdAndUpdate — pre-save hook bypass
+      const salt = await bcrypt.genSalt(10);
+      const hashed = await bcrypt.hash(newPassword, salt);
+      await Admin.findByIdAndUpdate(userId, { password: hashed });
+      emailData = { name: admin.name, email: admin.email, newPassword, role };
     } else {
       const student = await Student.findById(userId);
       if (!student)
-        return res.status(404).json({ message: "Student not found" });
+        return res.status(404).json({ message: 'Student not found' });
       const isMatch = await bcrypt.compare(currentPassword, student.password);
       if (!isMatch)
-        return res.status(400).json({ message: "Current password is incorrect" });
+        return res.status(400).json({ message: 'Current password is incorrect' });
+      // Hash manually + findByIdAndUpdate — pre-save hook bypass
       const salt = await bcrypt.genSalt(10);
-      student.password = await bcrypt.hash(newPassword, salt);
-      student.markModified('password');
-      await student.save({ validateModifiedOnly: true });
-      // Email background मध्ये पाठव — response hold करू नको
-      sendPasswordChangeEmail({ name: student.name, email: student.email, newPassword, role: 'student' })
-        .catch(e => console.error('Password change email failed:', e.message));
+      const hashed = await bcrypt.hash(newPassword, salt);
+      await Student.findByIdAndUpdate(userId, { password: hashed });
+      emailData = { name: student.name, email: student.email, newPassword, role: 'student' };
     }
 
-    res.status(200).json({ message: "Password changed successfully" });
+    // Response taabdtob pathav
+    res.status(200).json({ message: 'Password changed successfully' });
+
+    // Email background madhe pathav
+    if (emailData) {
+      sendPasswordChangeEmail(emailData)
+        .catch(e => console.error('Password change email failed:', e.message));
+    }
   } catch (error) {
     console.error('changePassword error:', error);
-    res.status(500).json({ message: "Failed to change password", error: error.message });
+    res.status(500).json({ message: 'Failed to change password', error: error.message });
   }
 };
