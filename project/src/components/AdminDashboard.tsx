@@ -57,6 +57,7 @@ const AdminDashboard: React.FC = () => {
   >("complaints");
   const [complaintsPage, setComplaintsPage] = useState(1);
   const [studentsPage, setStudentsPage] = useState(1);
+  const [complaintView, setComplaintView] = useState<'active' | 'resolved'>('active');
 
   const stats: ComplaintStats = useMemo(() => {
     const today = new Date().toDateString();
@@ -136,12 +137,14 @@ const AdminDashboard: React.FC = () => {
         const matchesDate = !dateFilter || localDate === dateFilter;
         const matchesClass =
           classFilter === "all" || (complaint as any).class === classFilter;
-
-        // Department admin can only see complaints from their department
         const adminDepartmentFilter =
           authState.currentAdmin && !authState.currentAdmin.isMainAdmin
             ? complaint.department === authState.currentAdmin.department
             : true;
+        const matchesView =
+          complaintView === 'resolved'
+            ? complaint.status === 'Resolved'
+            : complaint.status !== 'Resolved';
 
         return (
           matchesSearch &&
@@ -149,7 +152,8 @@ const AdminDashboard: React.FC = () => {
           matchesDepartment &&
           matchesDate &&
           matchesClass &&
-          adminDepartmentFilter
+          adminDepartmentFilter &&
+          matchesView
         );
       })
       .sort(
@@ -164,9 +168,10 @@ const AdminDashboard: React.FC = () => {
     classFilter,
     dateFilter,
     authState.currentAdmin,
+    complaintView,
   ]);
 
-  React.useEffect(() => { setComplaintsPage(1); }, [searchTerm, statusFilter, departmentFilter, classFilter, dateFilter]);
+  React.useEffect(() => { setComplaintsPage(1); }, [searchTerm, statusFilter, departmentFilter, classFilter, dateFilter, complaintView]);
   React.useEffect(() => { setStudentsPage(1); }, [searchTerm, departmentFilter, classFilter]);
 
   const filteredStudents = useMemo(() => {
@@ -529,9 +534,14 @@ const AdminDashboard: React.FC = () => {
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
                 >
                   <option value="all">All Status</option>
-                  <option value="Pending">Pending</option>
-                  <option value="In Progress">In Progress</option>
-                  <option value="Resolved">Resolved</option>
+                  {complaintView === 'active' ? (
+                    <>
+                      <option value="Pending">Pending</option>
+                      <option value="In Progress">In Progress</option>
+                    </>
+                  ) : (
+                    <option value="Resolved">Resolved</option>
+                  )}
                 </select>
               </div>
             )}
@@ -579,8 +589,27 @@ const AdminDashboard: React.FC = () => {
         {/* Content Based on Active Tab */}
         {activeTab === "complaints" ? (
           <div className="space-y-4">
+            {/* Active / Resolved toggle */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setComplaintView('active')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  complaintView === 'active' ? 'bg-blue-600 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                Active <span className="ml-1 opacity-75">({complaints.filter(c => c.status !== 'Resolved' && (authState.currentAdmin?.isMainAdmin || c.department === authState.currentAdmin?.department)).length})</span>
+              </button>
+              <button
+                onClick={() => setComplaintView('resolved')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  complaintView === 'resolved' ? 'bg-green-600 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                Resolved <span className="ml-1 opacity-75">({complaints.filter(c => c.status === 'Resolved' && (authState.currentAdmin?.isMainAdmin || c.department === authState.currentAdmin?.department)).length})</span>
+              </button>
+            </div>
             <h2 className="text-lg font-bold text-gray-800">
-              Complaints <span className="text-gray-400 font-normal">({filteredComplaints.length})</span>
+              {complaintView === 'resolved' ? 'Resolved Complaints' : 'Active Complaints'} <span className="text-gray-400 font-normal">({filteredComplaints.length})</span>
             </h2>
             {filteredComplaints.length === 0 ? (
               <div className="bg-white rounded-2xl border border-gray-100 p-16 text-center">
