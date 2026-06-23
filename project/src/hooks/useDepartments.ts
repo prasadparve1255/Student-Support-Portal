@@ -1,20 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import API_BASE from '../services/api';
-
-// Mock data for development when API is unavailable
-const MOCK_DEPARTMENTS = [
-  { _id: '1', name: 'Computer Science', code: 'CS', description: 'Computer Science Department' },
-  { _id: '2', name: 'Electrical Engineering', code: 'EE', description: 'Electrical Engineering Department' },
-  { _id: '3', name: 'Mechanical Engineering', code: 'ME', description: 'Mechanical Engineering Department' }
-];
 
 interface Department {
   _id?: string;
   name: string;
   code: string;
   description: string;
-
   adminName?: string;
   username?: string;
   email?: string;
@@ -31,72 +23,79 @@ interface DepartmentHook {
     refreshDepartments: () => Promise<void>;
 }
 
+// Module-level cache — component re-mount वर re-fetch होणार नाही
+let _cache: Department[] | null = null;
+let _cacheTime = 0;
+const CACHE_TTL = 60_000; // 1 minute
+
 export const useDepartments = (): DepartmentHook => {
     const token = localStorage.getItem('token');
-    const [departments, setDepartments] = useState<Department[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [departments, setDepartments] = useState<Department[]>(_cache || []);
+    const [loading, setLoading] = useState(_cache === null);
     const [error, setError] = useState<string | null>(null);
+    const isMounted = useRef(true);
 
-    const fetchDepartments = async () => {
+    const fetchDepartments = async (force = false) => {
+        // Cache valid असेल तर skip
+        if (!force && _cache && Date.now() - _cacheTime < CACHE_TTL) {
+            setDepartments(_cache);
+            setLoading(false);
+            return;
+        }
         try {
             setLoading(true);
-            try {
-                const response = await axios.get(`${API_BASE}/departments`, {
-                    headers: token ? { Authorization: `Bearer ${token}` } : {}
-                });
+            const response = await axios.get(`${API_BASE}/departments`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {}
+            });
+            _cache = response.data;
+            _cacheTime = Date.now();
+            if (isMounted.current) {
                 setDepartments(response.data);
                 setError(null);
-            } catch (apiErr) {
-                console.warn('API unavailable, using mock data');
-                setDepartments(MOCK_DEPARTMENTS);
-                setError(null);
             }
-        } catch (err) {
-            setError('Error fetching departments');
-            console.error('Error fetching departments:', err);
+        } catch {
+            if (isMounted.current) setError('Error fetching departments');
         } finally {
-            setLoading(false);
+            if (isMounted.current) setLoading(false);
         }
     };
 
     useEffect(() => {
+        isMounted.current = true;
         fetchDepartments();
+        return () => { isMounted.current = false; };
     }, [token]);
 
     const createDepartment = async (data: Omit<Department, '_id'>) => {
-        try {
-            const res = await axios.post(`${API_BASE}/departments`, data, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setDepartments(prev => [...prev, res.data.department || res.data]);
-        } catch (err) {
-            setError('Error creating department');
-            throw err;
-        }
+        const res = await axios.post(`${API_BASE}/departments`, data, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        const newDept = res.data.department || res.data;
+        _cache = [...((_cache) || []), newDept];
+        _cacheTime = Date.now();
+        setDepartments(prev => [...prev, newDept]);
     };
 
     const updateDepartment = async (id: string, data: Partial<Department>) => {
-        try {
-            const res = await axios.put(`${API_BASE}/departments/${id}`, data, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setDepartments(prev => prev.map(d => d._id === id ? { ...d, ...res.data } : d));
-        } catch (err) {
-            setError('Error updating department');
-            throw err;
-        }
+        const res = await axios.put(`${API_BASE}/departments/${id}`, data, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        setDepartments(prev => {
+            const updated = prev.map(d => d._id === id ? { ...d, ...res.data } : d);
+            _cache = updated;
+            return updated;
+        });
     };
 
     const deleteDepartment = async (id: string) => {
-        try {
-            await axios.delete(`${API_BASE}/departments/${id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setDepartments(prev => prev.filter(d => d._id !== id));
-        } catch (err) {
-            setError('Error deleting department');
-            throw err;
-        }
+        await axios.delete(`${API_BASE}/departments/${id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        setDepartments(prev => {
+            const updated = prev.filter(d => d._id !== id);
+            _cache = updated;
+            return updated;
+        });
     };
 
     return {
@@ -106,7 +105,7 @@ export const useDepartments = (): DepartmentHook => {
         createDepartment,
         updateDepartment,
         deleteDepartment,
-        refreshDepartments: fetchDepartments
+        refreshDepartments: () => fetchDepartments(true)
     };
 };
 

@@ -90,6 +90,8 @@ export const useComplaints = () => {
   }, [loadComplaints]);
 
   const updateComplaintStatus = useCallback(async (id: string, status: Complaint['status'], adminResponse?: string) => {
+    // Optimistic update — UI taabdtob update
+    setComplaints(prev => prev.map(c => c.id === id ? { ...c, status, adminResponse: adminResponse || c.adminResponse } : c));
     setIsEmailSending(true);
     try {
       const token = localStorage.getItem('token');
@@ -101,22 +103,25 @@ export const useComplaints = () => {
         },
         body: JSON.stringify({ status, adminResponse }),
       });
-
-      if (!res.ok) throw new Error('Failed to update status');
-      await loadComplaints();
+      if (!res.ok) {
+        // rollback
+        await loadComplaints();
+        throw new Error('Failed to update status');
+      }
     } finally {
       setIsEmailSending(false);
     }
   }, [loadComplaints]);
 
   const markNotificationAsRead = useCallback(async (id: string) => {
+    // Optimistic update
+    setComplaints(prev => prev.map(c => c.id === id ? { ...c, isNotification: false, isArchived: true } : c));
     const token = localStorage.getItem('token');
-    await fetch(`${API_BASE}/complaints/${id}/read`, {
+    fetch(`${API_BASE}/complaints/${id}/read`, {
       method: 'PUT',
       headers: { ...(token && { Authorization: `Bearer ${token}` }) },
     });
-    await loadComplaints();
-  }, [loadComplaints]);
+  }, []);
 
   return {
     complaints,
