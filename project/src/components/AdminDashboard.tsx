@@ -256,59 +256,57 @@ const AdminDashboard: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
         {/* Header */}
-        <div className="mb-8 flex items-center justify-between">
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <div className="flex items-center space-x-3 mb-2">
-              <img src="/logo.svg" alt="logo" className="h-10 w-10" />
+            <div className="flex items-center space-x-3 mb-1">
+              <img src="/logo.svg" alt="logo" className="h-8 w-8 sm:h-10 sm:w-10" />
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">
+                <h1 className="text-lg sm:text-2xl font-bold text-gray-900 leading-tight">
                   {authState.currentAdmin?.isMainAdmin
                     ? "Main Admin Dashboard"
-                    : `${authState.currentAdmin?.department} Admin Dashboard`}
+                    : `${authState.currentAdmin?.department} Dashboard`}
                 </h1>
                 <p className="text-xs text-purple-600 font-semibold">Student Support Portal</p>
               </div>
             </div>
-            <p className="text-gray-600">
+            <p className="text-xs sm:text-sm text-gray-500 hidden sm:block">
               {authState.currentAdmin?.isMainAdmin
-                ? "Manage and track all student complaints with automated email notifications"
-                : `Manage ${authState.currentAdmin?.department} department complaints`}
+                ? "Manage and track all student complaints"
+                : `Manage ${authState.currentAdmin?.department} complaints`}
             </p>
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center gap-2 flex-wrap">
             {!authState.currentAdmin?.isMainAdmin && (
               <button
                 onClick={() => setShowRegisterModal(true)}
-                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors duration-200"
+                className="flex items-center space-x-1.5 px-3 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors text-sm"
               >
                 <Users className="h-4 w-4" />
-                <span>Register Student</span>
+                <span className="hidden sm:inline">Register Student</span>
+                <span className="sm:hidden">Register</span>
               </button>
             )}
             <button
               onClick={handleBackup}
               disabled={isBackingUp}
-              className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white hover:bg-green-700 rounded-lg transition-colors duration-200 disabled:opacity-50"
+              className="flex items-center space-x-1.5 px-3 py-2 bg-green-600 text-white hover:bg-green-700 rounded-lg transition-colors text-sm disabled:opacity-50"
             >
               <Download className="h-4 w-4" />
-              <span>{isBackingUp ? 'Backing up...' : 'Backup'}</span>
+              <span className="hidden sm:inline">{isBackingUp ? 'Backing up...' : 'Backup'}</span>
             </button>
             <button
               onClick={() => navigate("/profile")}
-              className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+              className="flex items-center space-x-1.5 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors text-sm"
             >
               <UserCircle className="h-5 w-5" />
-              <span>Profile</span>
+              <span className="hidden sm:inline">Profile</span>
             </button>
             <button
-              onClick={() => {
-                logout();
-                navigate("/");
-              }}
-              className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+              onClick={() => { logout(); navigate("/"); }}
+              className="flex items-center space-x-1.5 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors text-sm"
             >
               <LogOut className="h-4 w-4" />
-              <span>Logout</span>
+              <span className="hidden sm:inline">Logout</span>
             </button>
           </div>
         </div>
@@ -327,7 +325,7 @@ const AdminDashboard: React.FC = () => {
         )}
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mb-6">
           {activeTab === "complaints" ? (
             <>
               <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
@@ -480,66 +478,33 @@ const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Tab Navigation */}
-        <div className="bg-white rounded-xl shadow-lg p-4 mb-8 border border-gray-100">
-          <div className="flex space-x-4">
-            <button
-              onClick={() => setActiveTab("complaints")}
-              className={`px-4 py-2 font-medium rounded-lg transition-colors ${
-                activeTab === "complaints"
-                  ? "bg-blue-600 text-white"
-                  : "text-gray-600 hover:bg-gray-100"
-              }`}
-            >
-              Complaints
-            </button>
-            <button
-              onClick={() => setActiveTab("students")}
-              className={`px-4 py-2 font-medium rounded-lg transition-colors ${
-                activeTab === "students"
-                  ? "bg-blue-600 text-white"
-                  : "text-gray-600 hover:bg-gray-100"
-              }`}
-            >
-              Students
-            </button>
-            {authState.currentAdmin?.isMainAdmin && (
+        <div className="bg-white rounded-xl shadow-lg p-3 mb-6 border border-gray-100">
+          <div className="flex overflow-x-auto gap-2 scrollbar-hide">
+            {[
+              { key: 'complaints', label: 'Complaints' },
+              { key: 'students', label: 'Students' },
+              ...(authState.currentAdmin?.isMainAdmin ? [{ key: 'departments', label: 'Departments' }] : []),
+              { key: 'classes', label: 'Classes' },
+              { key: 'reports', label: 'Reports' },
+            ].map(tab => (
               <button
-                onClick={() => setActiveTab("departments")}
-                className={`px-4 py-2 font-medium rounded-lg transition-colors ${
-                  activeTab === "departments"
-                    ? "bg-blue-600 text-white"
-                    : "text-gray-600 hover:bg-gray-100"
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key as any)}
+                className={`px-4 py-2 font-medium rounded-lg transition-colors whitespace-nowrap text-sm ${
+                  activeTab === tab.key
+                    ? tab.key === 'classes' ? 'bg-purple-600 text-white' : 'bg-blue-600 text-white'
+                    : 'text-gray-600 hover:bg-gray-100'
                 }`}
               >
-                Departments
+                {tab.label}
               </button>
-            )}
-            <button
-              onClick={() => setActiveTab("classes")}
-              className={`px-4 py-2 font-medium rounded-lg transition-colors ${
-                activeTab === "classes"
-                  ? "bg-purple-600 text-white"
-                  : "text-gray-600 hover:bg-gray-100"
-              }`}
-            >
-              Classes
-            </button>
-            <button
-              onClick={() => setActiveTab("reports")}
-              className={`px-4 py-2 font-medium rounded-lg transition-colors ${
-                activeTab === "reports"
-                  ? "bg-blue-600 text-white"
-                  : "text-gray-600 hover:bg-gray-100"
-              }`}
-            >
-              Reports
-            </button>
+            ))}
           </div>
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-8 border border-gray-100">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-white rounded-xl shadow-lg p-4 mb-6 border border-gray-100">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
