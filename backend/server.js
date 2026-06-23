@@ -83,22 +83,21 @@ app.get('/test-email', async (req, res) => {
     const { sendRegistrationEmail } = require('./utils/emailService');
     await sendRegistrationEmail({
       name: 'Test Student',
-      email: process.env.EMAIL_USER,
+      email: 'prasadpandurangparve@gmail.com',
       studentId: 'TEST01',
       originalPassword: 'test123',
       department: 'Test Dept',
     });
-    res.json({ success: true, message: 'Test email sent to ' + process.env.EMAIL_USER });
+    res.json({ success: true, message: 'Test email sent!' });
   } catch (e) {
     res.status(500).json({ success: false, error: e.message });
   }
 });
 
-// Email config check endpoint
+// Email config check
 app.get('/email-config', (req, res) => {
   res.json({
-    EMAIL_USER: process.env.EMAIL_USER ? '✅ Set: ' + process.env.EMAIL_USER : '❌ NOT SET',
-    EMAIL_PASSWORD: process.env.EMAIL_PASSWORD ? '✅ Set (' + process.env.EMAIL_PASSWORD.length + ' chars)' : '❌ NOT SET',
+    RESEND_API_KEY: process.env.RESEND_API_KEY ? '✅ Set (' + process.env.RESEND_API_KEY.length + ' chars)' : '❌ NOT SET',
   });
 });
 

@@ -1,23 +1,23 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
-const emailUser = (process.env.EMAIL_USER || '').trim();
-const emailPass = (process.env.EMAIL_PASSWORD || '').replace(/\s/g, '');
+const resend = new Resend(process.env.RESEND_API_KEY);
+const FROM_EMAIL = 'Student Support Portal <onboarding@resend.dev>';
 
-if (!emailUser || !emailPass) {
-  console.warn('⚠️ Email not configured: EMAIL_USER or EMAIL_PASSWORD missing');
+if (!process.env.RESEND_API_KEY) {
+  console.warn('⚠️ RESEND_API_KEY missing');
 } else {
-  console.log('✅ Email configured for:', emailUser);
+  console.log('✅ Resend email configured');
 }
 
-const createTransporter = () => nodemailer.createTransport({
-  service: 'gmail',
-  auth: { user: emailUser, pass: emailPass },
-  tls: { rejectUnauthorized: false }
-});
-
-const sendMail = async (options) => {
-  const t = createTransporter();
-  return t.sendMail({ ...options, from: emailUser });
+const sendMail = async ({ to, subject, html }) => {
+  const { data, error } = await resend.emails.send({
+    from: FROM_EMAIL,
+    to,
+    subject,
+    html,
+  });
+  if (error) throw new Error(error.message);
+  return data;
 };
 
 const sendRegistrationEmail = async (student) => {
@@ -29,7 +29,7 @@ const sendRegistrationEmail = async (student) => {
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
           <h2 style="color: #333;">Welcome to Student Support Portal</h2>
           <p>Hello ${student.name},</p>
-          <p>You have been successfully registered to the <strong>Student Support Portal</strong>.</p>
+          <p>You have been successfully registered.</p>
           <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 15px 0;">
             <p><strong>Student ID:</strong> ${student.studentId}</p>
             <p><strong>Password:</strong> ${student.originalPassword || student.password}</p>
@@ -41,7 +41,7 @@ const sendRegistrationEmail = async (student) => {
         </div>
       `
     });
-    console.log('Registration email sent:', info.messageId);
+    console.log('Registration email sent:', info?.id);
     return info;
   } catch (error) {
     console.error('Registration email error:', error.message);
@@ -59,7 +59,6 @@ const sendAdminNotificationEmail = async (data) => {
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
           <h2 style="color: #333;">New Student Registration</h2>
           <p>Hello ${admin.name || admin.username},</p>
-          <p>A new student has been registered.</p>
           <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 15px 0;">
             <p><strong>Name:</strong> ${student.name}</p>
             <p><strong>Email:</strong> ${student.email}</p>
@@ -70,7 +69,7 @@ const sendAdminNotificationEmail = async (data) => {
         </div>
       `
     });
-    console.log('Admin notification sent:', info.messageId);
+    console.log('Admin notification sent:', info?.id);
     return info;
   } catch (error) {
     console.error('Admin notification error:', error.message);
