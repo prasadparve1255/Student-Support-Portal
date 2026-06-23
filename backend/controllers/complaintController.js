@@ -18,24 +18,22 @@ const submitComplaint = async (req, res) => {
     });
     await complaint.save();
 
-    // Send confirmation email to student
-    try {
-      const student = await Student.findOne({ studentId: complaint.studentId }).select('name email');
+    // Response taabdtob pathav — email background madhe pathav
+    res.status(201).json({ message: 'Complaint submitted successfully', id: complaint._id });
+
+    // Background email (response already sent)
+    Student.findOne({ studentId: complaint.studentId }).select('name email').then(student => {
       if (student) {
-        await sendComplaintSubmittedEmail({
+        sendComplaintSubmittedEmail({
           name: student.name,
           email: student.email,
           subject: complaint.subject,
           complaintId: complaint._id,
           department: complaint.department,
           category: complaint.category,
-        });
+        }).catch(err => console.error('Complaint submitted email failed:', err.message));
       }
-    } catch (emailErr) {
-      console.error('Complaint submitted email failed:', emailErr.message);
-    }
-
-    res.status(201).json({ message: 'Complaint submitted successfully', id: complaint._id });
+    }).catch(err => console.error('Student lookup failed:', err.message));
   } catch (error) {
     console.error('Error submitting complaint:', error);
     res.status(500).json({ error: 'Failed to submit complaint' });
@@ -99,24 +97,22 @@ const updateComplaintStatus = async (req, res) => {
 
     if (!complaint) return res.status(404).json({ error: 'Complaint not found' });
 
-    // Send status update email to student
-    try {
-      const student = await Student.findOne({ studentId: complaint.studentId }).select('name email');
+    // Response taabdtob pathav
+    res.json(complaint);
+
+    // Background email
+    Student.findOne({ studentId: complaint.studentId }).select('name email').then(student => {
       if (student) {
-        await sendComplaintStatusUpdateEmail({
+        sendComplaintStatusUpdateEmail({
           name: student.name,
           email: student.email,
           subject: complaint.subject,
           complaintId: complaint._id,
           status,
           adminResponse: adminResponse || '',
-        });
+        }).catch(err => console.error('Status update email failed:', err.message));
       }
-    } catch (emailErr) {
-      console.error('Status update email failed:', emailErr.message);
-    }
-
-    res.json(complaint);
+    }).catch(err => console.error('Student lookup failed:', err.message));
   } catch (error) {
     res.status(500).json({ error: 'Failed to update complaint' });
   }
