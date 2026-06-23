@@ -3,7 +3,7 @@ import {
   Plus, Search, Filter, Clock, CheckCircle, FileText,
   Calendar, Building, Tag, MessageSquare, TrendingUp,
   Eye, LogOut, UserCircle, Paperclip, ChevronRight,
-  AlertCircle, Inbox, ArrowLeft,
+  AlertCircle, Inbox, ArrowLeft, Trash2,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useComplaints } from '../hooks/useComplaints';
@@ -12,7 +12,7 @@ import { Complaint } from '../types/complaint';
 import ComplaintForm from './ComplaintForm';
 
 const StudentDashboard: React.FC = () => {
-  const { complaints, markNotificationAsRead, loadComplaints } = useComplaints();
+  const { complaints, markNotificationAsRead, loadComplaints, deleteComplaint } = useComplaints();
   const { authState, logout } = useAuth();
   const [currentView, setCurrentView] = useState<'dashboard' | 'new-complaint' | 'view-complaint' | 'history'>('dashboard');
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
@@ -380,7 +380,6 @@ const StudentDashboard: React.FC = () => {
                       className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 cursor-pointer hover:shadow-lg hover:border-blue-300 transition-all group">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">
-                          {/* Title + badges */}
                           <div className="flex items-center flex-wrap gap-2 mb-3">
                             <h3 className="text-base font-bold text-gray-900">{c.subject}</h3>
                             <span className={`flex items-center space-x-1 px-3 py-1 rounded-full text-sm font-medium border ${sc.color}`}>
@@ -392,8 +391,6 @@ const StudentDashboard: React.FC = () => {
                               </span>
                             )}
                           </div>
-
-                          {/* Meta */}
                           <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-sm text-gray-500 mb-3">
                             <span className="flex items-center space-x-1.5"><Building className="h-4 w-4" /><span>{c.department}</span></span>
                             <span className="flex items-center space-x-1.5"><Tag className="h-4 w-4" /><span>{c.category}</span></span>
@@ -402,10 +399,7 @@ const StudentDashboard: React.FC = () => {
                               <span className="flex items-center space-x-1.5"><Paperclip className="h-4 w-4" /><span>{c.attachments.length} attachment(s)</span></span>
                             )}
                           </div>
-
                           <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">{c.description}</p>
-
-                          {/* Admin response preview */}
                           {c.adminResponse && (
                             <div className="mt-3 flex items-start space-x-2 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3">
                               <MessageSquare className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
@@ -413,8 +407,23 @@ const StudentDashboard: React.FC = () => {
                             </div>
                           )}
                         </div>
-
-                        <ChevronRight className="h-6 w-6 text-gray-300 group-hover:text-blue-400 shrink-0 mt-1 transition-colors" />
+                        <div className="flex flex-col items-center gap-2 shrink-0">
+                          <ChevronRight className="h-6 w-6 text-gray-300 group-hover:text-blue-400 transition-colors" />
+                          {c.status === 'Pending' && (
+                            <button
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                if (!window.confirm('Delete this complaint?')) return;
+                                try { await deleteComplaint(c.id); }
+                                catch (err: any) { alert(err.message || 'Delete failed'); }
+                              }}
+                              className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              title="Delete complaint"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   );

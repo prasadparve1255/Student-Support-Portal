@@ -138,6 +138,30 @@ const markNotificationAsRead = async (req, res) => {
   }
 };
 
+// Delete complaint (student — only their own Pending complaints)
+const deleteComplaint = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const complaint = await Complaint.findById(id);
+    if (!complaint) return res.status(404).json({ error: 'Complaint not found' });
+
+    // Student फक्त स्वतःच्या complaint delete करू शकतो
+    if (complaint.studentId !== req.user.studentId) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    // फक्त Pending complaints delete करता येतात
+    if (complaint.status !== 'Pending') {
+      return res.status(400).json({ error: 'Only Pending complaints can be deleted' });
+    }
+
+    await complaint.deleteOne();
+    res.json({ message: 'Complaint deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete complaint' });
+  }
+};
+
 module.exports = {
   submitComplaint,
   getComplaintsByDepartment,
@@ -145,4 +169,5 @@ module.exports = {
   getComplaintsByStudentId,
   updateComplaintStatus,
   markNotificationAsRead,
+  deleteComplaint,
 };

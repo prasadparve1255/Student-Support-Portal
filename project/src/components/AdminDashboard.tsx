@@ -603,7 +603,7 @@ const AdminDashboard: React.FC = () => {
                         </span>
                       </div>
                       <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-sm text-gray-500 mb-3">
-                        <span><span className="font-medium text-gray-700">Student:</span> {complaint.studentName} ({complaint.studentId})</span>
+                        <span><span className="font-medium text-gray-700">ID:</span> {complaint.studentId}</span>
                         <span><span className="font-medium text-gray-700">Dept:</span> {complaint.department}</span>
                         <span><span className="font-medium text-gray-700">Category:</span> {complaint.category}</span>
                         {(complaint as any).class && (
@@ -730,8 +730,7 @@ const AdminDashboard: React.FC = () => {
                 <div className="flex items-center space-x-2 mt-2">
                   <Mail className="h-4 w-4 text-gray-500" />
                   <span className="text-sm text-gray-600">
-                    Student will be notified via email:{" "}
-                    {selectedComplaint.studentEmail}
+                    Student will be notified via email
                   </span>
                 </div>
               </div>
@@ -739,8 +738,7 @@ const AdminDashboard: React.FC = () => {
               <div className="p-6">
                 {/* Student Info */}
                 <div className="mb-4 grid grid-cols-2 gap-2 text-sm bg-gray-50 p-3 rounded-lg">
-                  <div><span className="font-medium text-gray-500">Student:</span> <span className="text-gray-900">{selectedComplaint.studentName} ({selectedComplaint.studentId})</span></div>
-                  <div><span className="font-medium text-gray-500">Email:</span> <span className="text-gray-900">{selectedComplaint.studentEmail}</span></div>
+                  <div><span className="font-medium text-gray-500">Student ID:</span> <span className="text-gray-900">{selectedComplaint.studentId}</span></div>
                   <div><span className="font-medium text-gray-500">Department:</span> <span className="text-gray-900">{selectedComplaint.department}</span></div>
                   <div><span className="font-medium text-gray-500">Category:</span> <span className="text-gray-900">{selectedComplaint.category}</span></div>
                   {(selectedComplaint as any).class && (

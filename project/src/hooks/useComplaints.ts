@@ -123,12 +123,28 @@ export const useComplaints = () => {
     });
   }, []);
 
+  const deleteComplaint = useCallback(async (id: string) => {
+    // Optimistic update
+    setComplaints(prev => prev.filter(c => c.id !== id));
+    const token = localStorage.getItem('token');
+    const res = await fetch(`${API_BASE}/complaints/${id}`, {
+      method: 'DELETE',
+      headers: { ...(token && { Authorization: `Bearer ${token}` }) },
+    });
+    if (!res.ok) {
+      await loadComplaints(); // rollback
+      const err = await res.json();
+      throw new Error(err.error || 'Failed to delete complaint');
+    }
+  }, [loadComplaints]);
+
   return {
     complaints,
     loadComplaints,
     addComplaint,
     updateComplaintStatus,
     markNotificationAsRead,
+    deleteComplaint,
     isEmailSending,
   };
 };
