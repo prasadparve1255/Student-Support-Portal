@@ -77,6 +77,23 @@ app.get('/', (req, res) => {
     });
 });
 
+// Email test endpoint (dev only)
+app.get('/api/test-email', async (req, res) => {
+  try {
+    const { sendRegistrationEmail } = require('./utils/emailService');
+    await sendRegistrationEmail({
+      name: 'Test Student',
+      email: process.env.EMAIL_USER,
+      studentId: 'TEST01',
+      originalPassword: 'test123',
+      department: 'Test Dept',
+    });
+    res.json({ success: true, message: 'Test email sent to ' + process.env.EMAIL_USER });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 // Import auth routes
 const authRoutes = require('./routes/authRoutes');
 
