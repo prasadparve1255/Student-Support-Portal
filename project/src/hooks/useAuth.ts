@@ -108,21 +108,21 @@ export const useAuth = () => {
     setAuthState(newState);
   }, []);
 
-  const loginStudent = useCallback(async (studentId: string, password: string): Promise<boolean> => {
+  const loginStudent = useCallback(async (studentId: string, password: string): Promise<{ success: boolean; message?: string }> => {
     try {
       const response = await fetch(`${API}/auth/student/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ studentId, password }),
+        body: JSON.stringify({ studentId: studentId.trim(), password }),
       });
+      const data = await response.json();
       if (response.ok) {
-        const data = await response.json();
         const student: Student = {
           id: String(data.student?.studentId || ''),
           name: String(data.student?.name || ''),
           email: String(data.student?.email || ''),
           department: String(data.student?.department || ''),
-          password: '', // never store password
+          password: '',
           _id: String(data.student?.id || ''),
           class: data.student?.class
             ? typeof data.student.class === 'object'
@@ -132,23 +132,23 @@ export const useAuth = () => {
         };
         localStorage.setItem('token', String(data.token || ''));
         saveAuthState({ isAuthenticated: true, currentStudent: student, currentAdmin: null, isAdmin: false });
-        return true;
+        return { success: true };
       }
-      return false;
+      return { success: false, message: data.message || 'Invalid credentials' };
     } catch {
-      return false;
+      return { success: false, message: 'Network error. Please try again.' };
     }
   }, [saveAuthState]);
 
-  const loginAdmin = useCallback(async (username: string, password: string): Promise<boolean> => {
+  const loginAdmin = useCallback(async (username: string, password: string): Promise<{ success: boolean; message?: string }> => {
     try {
       const response = await fetch(`${API}/auth/admin/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username: username.trim(), password }),
       });
+      const data = await response.json();
       if (response.ok) {
-        const data = await response.json();
         const admin: Admin = {
           username: String(data.admin?.username || ''),
           department: String(data.admin?.department || ''),
@@ -157,11 +157,11 @@ export const useAuth = () => {
         };
         localStorage.setItem('token', String(data.token || ''));
         saveAuthState({ isAuthenticated: true, currentStudent: null, currentAdmin: admin, isAdmin: true });
-        return true;
+        return { success: true };
       }
-      return false;
+      return { success: false, message: data.message || 'Invalid credentials' };
     } catch {
-      return false;
+      return { success: false, message: 'Network error. Please try again.' };
     }
   }, [saveAuthState]);
 

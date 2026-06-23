@@ -156,22 +156,27 @@ exports.studentLogin = async (req, res) => {
   try {
     const { studentId, password } = req.body;
 
-    // Check if student exists
-    const student = await Student.findOne({ studentId })
-      .populate("department", "name code")
-      .populate("class", "name");
-    if (!student) {
-      return res.status(401).json({ message: "Invalid credentials" });
+    if (!studentId || !password) {
+      return res.status(400).json({ message: 'Student ID and password are required' });
     }
 
-    // Check password
+    // Case-insensitive studentId search
+    const student = await Student.findOne({
+      studentId: { $regex: new RegExp(`^${studentId.trim()}$`, 'i') }
+    })
+      .populate('department', 'name code')
+      .populate('class', 'name');
+
+    if (!student) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
     const isMatch = await bcrypt.compare(password, student.password);
     if (!isMatch) {
-      return res.status(401).json({ message: "Invalid credentials" });
+      return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // Generate token
-    const token = generateToken(student._id, "student");
+    const token = generateToken(student._id, 'student');
 
     res.status(200).json({
       token,
@@ -180,13 +185,12 @@ exports.studentLogin = async (req, res) => {
         name: student.name,
         email: student.email,
         studentId: student.studentId,
-        department:
-          student.department?.name || String(student.department || ""),
+        department: student.department?.name || String(student.department || ''),
         class: student.class ? { name: student.class.name, _id: student.class._id } : null,
       },
     });
   } catch (error) {
-    res.status(500).json({ message: "Login failed", error: error.message });
+    res.status(500).json({ message: 'Login failed', error: error.message });
   }
 };
 
@@ -222,15 +226,9 @@ exports.changePassword = async (req, res) => {
         return res.status(400).json({ message: "Current password is incorrect" });
       admin.password = newPassword;
       await admin.save();
-      // Email पाठव
-      try {
-        await sendPasswordChangeEmail({
-          name: admin.name,
-          email: admin.email,
-          newPassword,
-          role: req.user.role,
-        });
-      } catch (e) { console.error('Password change email failed:', e.message); }
+      // Email background मध्ये पाठव — response hold करू नको
+      sendPasswordChangeEmail({ name: admin.name, email: admin.email, newPassword, role: req.user.role })
+        .catch(e => console.error('Password change email failed:', e.message));
     } else {
       const student = await Student.findById(userId);
       if (!student)
@@ -242,15 +240,9 @@ exports.changePassword = async (req, res) => {
       student.password = await bcrypt.hash(newPassword, salt);
       student.markModified('password');
       await student.save({ validateModifiedOnly: true });
-      // Email पाठव
-      try {
-        await sendPasswordChangeEmail({
-          name: student.name,
-          email: student.email,
-          newPassword,
-          role: 'student',
-        });
-      } catch (e) { console.error('Password change email failed:', e.message); }
+      // Email background मध्ये पाठव — response hold करू नको
+      sendPasswordChangeEmail({ name: student.name, email: student.email, newPassword, role: 'student' })
+        .catch(e => console.error('Password change email failed:', e.message));
     }
 
     res.status(200).json({ message: "Password changed successfully" });

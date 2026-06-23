@@ -29,15 +29,15 @@ const LoginPage: React.FC = () => {
     setIsLoading(true);
 
     try {
-      let success = false;
+      let result: { success: boolean; message?: string };
       if (loginType === "student") {
-        success = await loginStudent(formData.username, formData.password);
+        result = await loginStudent(formData.username, formData.password);
       } else {
-        success = await loginAdmin(formData.username, formData.password);
+        result = await loginAdmin(formData.username, formData.password);
       }
 
-      if (!success) {
-        setError("Invalid credentials. Please try again.");
+      if (!result.success) {
+        setError(result.message || 'Invalid credentials. Please try again.');
       }
     } catch (err) {
       setError("An error occurred. Please try again.");
