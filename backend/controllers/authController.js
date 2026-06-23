@@ -245,14 +245,15 @@ exports.changePassword = async (req, res) => {
       emailData = { name: student.name, email: student.email, newPassword, role: 'student' };
     }
 
-    // Response taabdtob pathav
-    res.status(200).json({ message: 'Password changed successfully' });
+    // Response + email dononhi kar
+    const emailPromise = emailData
+      ? sendPasswordChangeEmail(emailData).catch(e => console.error('Password change email failed:', e.message))
+      : Promise.resolve();
 
-    // Email background madhe pathav
-    if (emailData) {
-      sendPasswordChangeEmail(emailData)
-        .catch(e => console.error('Password change email failed:', e.message));
-    }
+    const timeout = new Promise(resolve => setTimeout(resolve, 5000));
+    await Promise.race([emailPromise, timeout]);
+
+    res.status(200).json({ message: 'Password changed successfully' });
   } catch (error) {
     console.error('changePassword error:', error);
     res.status(500).json({ message: 'Failed to change password', error: error.message });

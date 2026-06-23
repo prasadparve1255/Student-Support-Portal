@@ -57,14 +57,8 @@ exports.registerStudent = async (req, res) => {
     const studentResponse = student.toObject();
     delete studentResponse.password;
 
-    res.status(201).json({
-      ...studentResponse,
-      studentEmailSent: true,
-      adminEmailSent: true,
-    });
-
-    // Emails background madhe pathav
-    sendRegistrationEmail({
+    // Email pathav (5 sec timeout)
+    const emailPromise = sendRegistrationEmail({
       name,
       email,
       studentId,
@@ -72,6 +66,16 @@ exports.registerStudent = async (req, res) => {
       originalPassword: password,
     }).catch(e => console.error('Student email failed:', e.message));
 
+    const timeout = new Promise(resolve => setTimeout(resolve, 5000));
+    await Promise.race([emailPromise, timeout]);
+
+    res.status(201).json({
+      ...studentResponse,
+      studentEmailSent: true,
+      adminEmailSent: true,
+    });
+
+    // Admin notification background madhe
     Admin.findOne({ isMainAdmin: true }).then(admin => {
       if (admin?.email) {
         sendAdminNotificationEmail({

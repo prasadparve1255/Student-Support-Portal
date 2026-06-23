@@ -112,16 +112,8 @@ exports.registerStudent = async (req, res) => {
       } catch (e) { /* ignore */ }
     }
 
-    res.status(201).json({
-      studentId: student.studentId,
-      name: student.name,
-      email: student.email,
-      department: departmentDoc.name,
-      _id: student._id,
-    });
-
-    // Email background madhe pathav — response hold karu nako
-    sendRegistrationEmail({
+    // Email pathav (5 sec timeout - jast vel nahi lagar)
+    const emailPromise = sendRegistrationEmail({
       name: student.name,
       email: student.email,
       studentId: student.studentId,
@@ -129,6 +121,17 @@ exports.registerStudent = async (req, res) => {
       department: departmentDoc.name,
       className,
     }).catch(e => console.error('Registration email failed:', e.message));
+
+    const timeout = new Promise(resolve => setTimeout(resolve, 5000));
+    await Promise.race([emailPromise, timeout]);
+
+    res.status(201).json({
+      studentId: student.studentId,
+      name: student.name,
+      email: student.email,
+      department: departmentDoc.name,
+      _id: student._id,
+    });
 
   } catch (error) {
     console.error("Student registration error:", error);
