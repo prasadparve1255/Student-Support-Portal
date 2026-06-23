@@ -2,6 +2,7 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const Admin = require("../models/Admin");
 const Student = require("../models/Student");
+const { sendPasswordChangeEmail } = require('../utils/emailService');
 
 // Check if setup is needed (no admin exists)
 exports.checkSetup = async (req, res) => {
@@ -221,6 +222,15 @@ exports.changePassword = async (req, res) => {
         return res.status(400).json({ message: "Current password is incorrect" });
       admin.password = newPassword;
       await admin.save();
+      // Email पाठव
+      try {
+        await sendPasswordChangeEmail({
+          name: admin.name,
+          email: admin.email,
+          newPassword,
+          role: req.user.role,
+        });
+      } catch (e) { console.error('Password change email failed:', e.message); }
     } else {
       const student = await Student.findById(userId);
       if (!student)
@@ -232,6 +242,15 @@ exports.changePassword = async (req, res) => {
       student.password = await bcrypt.hash(newPassword, salt);
       student.markModified('password');
       await student.save({ validateModifiedOnly: true });
+      // Email पाठव
+      try {
+        await sendPasswordChangeEmail({
+          name: student.name,
+          email: student.email,
+          newPassword,
+          role: 'student',
+        });
+      } catch (e) { console.error('Password change email failed:', e.message); }
     }
 
     res.status(200).json({ message: "Password changed successfully" });

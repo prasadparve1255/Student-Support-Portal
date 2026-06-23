@@ -197,10 +197,42 @@ const sendDepartmentAdminWelcomeEmail = async ({ name, email, username, password
   }
 };
 
+/**
+ * Send password change confirmation email
+ */
+const sendPasswordChangeEmail = async ({ name, email, newPassword, role }) => {
+  const roleLabel = role === 'MAIN_ADMIN' ? 'Main Admin' : role === 'DEPARTMENT_ADMIN' ? 'Department Admin' : 'Student';
+  try {
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: 'Your Password Has Been Changed — Student Support Portal',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+          <h2 style="color: #2563eb;">Password Changed Successfully 🔐</h2>
+          <p>Hello <strong>${name}</strong>,</p>
+          <p>Your password for the <strong>Student Support Portal</strong> has been changed successfully.</p>
+          <div style="background-color: #f0f4ff; padding: 15px; border-radius: 6px; margin: 15px 0;">
+            <p><strong>Account:</strong> ${name}</p>
+            <p><strong>Role:</strong> ${roleLabel}</p>
+            <p><strong>New Password:</strong> <span style="font-family: monospace; font-size: 16px; color: #1d4ed8;">${newPassword}</span></p>
+          </div>
+          <p style="color: #e74c3c; font-weight: bold;">⚠️ Please keep this password safe and do not share it with anyone.</p>
+          <p>If you did not make this change, please contact the administrator immediately.</p>
+          <p>Thank you,<br>Student Support Portal Team</p>
+        </div>
+      `
+    });
+  } catch (error) {
+    console.error('Error sending password change email:', error.message);
+  }
+};
+
 module.exports = {
   sendRegistrationEmail,
   sendAdminNotificationEmail,
   sendComplaintSubmittedEmail,
   sendComplaintStatusUpdateEmail,
   sendDepartmentAdminWelcomeEmail,
+  sendPasswordChangeEmail,
 };
