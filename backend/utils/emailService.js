@@ -10,13 +10,8 @@ if (!emailUser || !emailPass) {
 }
 
 const createTransporter = () => nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false,
-  requireTLS: true,
+  service: 'gmail',
   auth: { user: emailUser, pass: emailPass },
-  connectionTimeout: 10000,
-  greetingTimeout: 10000,
   tls: { rejectUnauthorized: false }
 });
 

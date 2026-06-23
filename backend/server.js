@@ -77,8 +77,8 @@ app.get('/', (req, res) => {
     });
 });
 
-// Email test endpoint (dev only)
-app.get('/api/test-email', async (req, res) => {
+// Email test endpoint
+app.get('/test-email', async (req, res) => {
   try {
     const { sendRegistrationEmail } = require('./utils/emailService');
     await sendRegistrationEmail({
@@ -92,6 +92,14 @@ app.get('/api/test-email', async (req, res) => {
   } catch (e) {
     res.status(500).json({ success: false, error: e.message });
   }
+});
+
+// Email config check endpoint
+app.get('/email-config', (req, res) => {
+  res.json({
+    EMAIL_USER: process.env.EMAIL_USER ? '✅ Set: ' + process.env.EMAIL_USER : '❌ NOT SET',
+    EMAIL_PASSWORD: process.env.EMAIL_PASSWORD ? '✅ Set (' + process.env.EMAIL_PASSWORD.length + ' chars)' : '❌ NOT SET',
+  });
 });
 
 // Import auth routes
