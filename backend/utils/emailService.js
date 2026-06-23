@@ -1,7 +1,7 @@
 const { Resend } = require('resend');
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const FROM_EMAIL = 'Student Support Portal <onboarding@resend.dev>';
+const FROM_EMAIL = process.env.FROM_EMAIL || 'onboarding@resend.dev';
 
 if (!process.env.RESEND_API_KEY) {
   console.warn('⚠️ RESEND_API_KEY missing');

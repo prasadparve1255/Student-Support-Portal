@@ -80,15 +80,16 @@ app.get('/', (req, res) => {
 // Email test endpoint
 app.get('/test-email', async (req, res) => {
   try {
-    const { sendRegistrationEmail } = require('./utils/emailService');
-    await sendRegistrationEmail({
-      name: 'Test Student',
-      email: 'prasadpandurangparve@gmail.com',
-      studentId: 'TEST01',
-      originalPassword: 'test123',
-      department: 'Test Dept',
+    const { Resend } = require('resend');
+    const r = new Resend(process.env.RESEND_API_KEY);
+    const { data, error } = await r.emails.send({
+      from: 'onboarding@resend.dev',
+      to: 'prasadpandurangparve@gmail.com',
+      subject: 'Test Email from Student Portal',
+      html: '<h2>Test email working!</h2><p>Resend is configured correctly.</p>',
     });
-    res.json({ success: true, message: 'Test email sent!' });
+    if (error) return res.status(500).json({ success: false, error });
+    res.json({ success: true, data });
   } catch (e) {
     res.status(500).json({ success: false, error: e.message });
   }
