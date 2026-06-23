@@ -276,13 +276,15 @@ const AdminDashboard: React.FC = () => {
             </p>
           </div>
           <div className="flex items-center space-x-4">
-            <button
-              onClick={() => setShowRegisterModal(true)}
-              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors duration-200"
-            >
-              <Users className="h-4 w-4" />
-              <span>Register Student</span>
-            </button>
+            {!authState.currentAdmin?.isMainAdmin && (
+              <button
+                onClick={() => setShowRegisterModal(true)}
+                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors duration-200"
+              >
+                <Users className="h-4 w-4" />
+                <span>Register Student</span>
+              </button>
+            )}
             <button
               onClick={handleBackup}
               disabled={isBackingUp}
