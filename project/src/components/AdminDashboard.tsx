@@ -47,7 +47,8 @@ const AdminDashboard: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [departmentFilter, setDepartmentFilter] = useState<string>("all");
   const [classFilter] = useState<string>("all");
-  const [dateFilter, setDateFilter] = useState<string>("");
+  const [dateFromFilter, setDateFromFilter] = useState<string>("");
+  const [dateToFilter, setDateToFilter] = useState<string>("");
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
   const [adminResponse, setAdminResponse] = useState("");
   const [showRegisterModal, setShowRegisterModal] = useState(false);
@@ -133,8 +134,9 @@ const AdminDashboard: React.FC = () => {
           departmentFilter === "all" ||
           complaint.department === departmentFilter;
         const complaintDate = new Date(complaint.createdAt);
-        const localDate = `${complaintDate.getFullYear()}-${String(complaintDate.getMonth() + 1).padStart(2, '0')}-${String(complaintDate.getDate()).padStart(2, '0')}`;
-        const matchesDate = !dateFilter || localDate === dateFilter;
+        const matchesDate = 
+          (!dateFromFilter || complaintDate >= new Date(dateFromFilter)) &&
+          (!dateToFilter || complaintDate <= new Date(dateToFilter + 'T23:59:59'));
         const matchesClass =
           classFilter === "all" || (complaint as any).class === classFilter;
         const adminDepartmentFilter =
@@ -166,12 +168,13 @@ const AdminDashboard: React.FC = () => {
     statusFilter,
     departmentFilter,
     classFilter,
-    dateFilter,
+    dateFromFilter,
+    dateToFilter,
     authState.currentAdmin,
     complaintView,
   ]);
 
-  React.useEffect(() => { setComplaintsPage(1); }, [searchTerm, statusFilter, departmentFilter, classFilter, dateFilter, complaintView]);
+  React.useEffect(() => { setComplaintsPage(1); }, [searchTerm, statusFilter, departmentFilter, classFilter, dateFromFilter, dateToFilter, complaintView]);
   React.useEffect(() => { setStudentsPage(1); }, [searchTerm, departmentFilter, classFilter]);
 
   const filteredStudents = useMemo(() => {
@@ -573,15 +576,30 @@ const AdminDashboard: React.FC = () => {
 
 
             {activeTab === "complaints" && (
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="date"
-                  value={dateFilter}
-                  onChange={(e) => setDateFilter(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
+              <>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input
+                    type="date"
+                    value={dateFromFilter}
+                    onChange={(e) => setDateFromFilter(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="From Date"
+                  />
+                  <span className="absolute -bottom-4 left-3 text-xs text-gray-400">From</span>
+                </div>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input
+                    type="date"
+                    value={dateToFilter}
+                    onChange={(e) => setDateToFilter(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="To Date"
+                  />
+                  <span className="absolute -bottom-4 left-3 text-xs text-gray-400">To</span>
+                </div>
+              </>
             )}
           </div>
         </div>
