@@ -69,18 +69,30 @@ exports.registerStudent = async (req, res) => {
     const year = new Date().getFullYear().toString().slice(-2);
     const deptCode = departmentDoc.code?.toUpperCase().slice(0, 2) || "ST";
     const prefix = `${year}${deptCode}`;
-    // Safe: prefix is constructed from controlled values only, not user input
     const escapedPrefix = prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const lastStudent = await Student.findOne({
+    
+    // Find all existing students with this prefix and get highest number
+    const existingStudents = await Student.find({
       studentId: new RegExp(`^${escapedPrefix}`),
-    }).sort({ studentId: -1 });
+    }).select('studentId').lean();
+    
     let counter = 1;
-    if (lastStudent) {
-      const lastNum = parseInt(lastStudent.studentId.slice(prefix.length), 10);
-      if (!isNaN(lastNum)) counter = lastNum + 1;
+    if (existingStudents.length > 0) {
+      const numbers = existingStudents.map(s => {
+        const num = parseInt(s.studentId.slice(prefix.length), 10);
+        return isNaN(num) ? 0 : num;
+      });
+      counter = Math.max(...numbers) + 1;
     }
-    const finalStudentId = `${prefix}${counter.toString().padStart(2, "0")}`;
-
+    
+    // Make sure generated ID doesn't exist (safety check)
+    let finalStudentId = `${prefix}${counter.toString().padStart(2, "0")}`;
+    let exists = await Student.findOne({ studentId: finalStudentId });
+    while (exists) {
+      counter++;
+      finalStudentId = `${prefix}${counter.toString().padStart(2, "0")}`;
+      exists = await Student.findOne({ studentId: finalStudentId });
+    }
     const existingEmail = await Student.findOne({ email: email.toLowerCase() });
     if (existingEmail) {
       return res.status(400).json({ message: "Email already registered" });
