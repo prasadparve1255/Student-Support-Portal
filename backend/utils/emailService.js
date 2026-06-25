@@ -1,7 +1,5 @@
 const nodemailer = require('nodemailer');
-const dns = require("dns");
 
-dns.setDefaultResultOrder("ipv4first");
 // const transporter = nodemailer.createTransport({
 //   service: 'gmail',
 //   auth: {
@@ -9,46 +7,60 @@ dns.setDefaultResultOrder("ipv4first");
 //     pass: process.env.EMAIL_PASSWORD,
 //   },
 // });
-const dns = require("dns");
-dns.setDefaultResultOrder("ipv4first");
 
-const nodemailer = require("nodemailer");
+// const nodemailer = require("nodemailer");
 
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD,
-  },
-  connectionTimeout: 30000,
-  greetingTimeout: 30000,
-  socketTimeout: 30000,
-});
+// const transporter = nodemailer.createTransport({
+//   host: "smtp.gmail.com",
+//   port: 587,
+//   secure: false,
+//   auth: {
+//     user: process.env.EMAIL_USER,
+//     pass: process.env.EMAIL_PASSWORD,
+//   },
+//   connectionTimeout: 30000,
+//   greetingTimeout: 30000,
+//   socketTimeout: 30000,
+// });
 
-console.log("EMAIL_USER =", process.env.EMAIL_USER);
-console.log(
-  "EMAIL_PASSWORD EXISTS =",
-  !!process.env.EMAIL_PASSWORD
-);
+// console.log("EMAIL_USER =", process.env.EMAIL_USER);
+// console.log(
+//   "EMAIL_PASSWORD EXISTS =",
+//   !!process.env.EMAIL_PASSWORD
+// );
 
-transporter.verify((error, success) => {
-  if (error) {
-    console.error("❌ SMTP Error:", error);
-  } else {
-    console.log("✅ SMTP Ready");
-  }
-});
+// transporter.verify((error, success) => {
+//   if (error) {
+//     console.error("❌ SMTP Error:", error);
+//   } else {
+//     console.log("✅ SMTP Ready");
+//   }
+// });
+
+// const sendMail = async ({ to, subject, html }) => {
+//   const info = await transporter.sendMail({
+//     from: `"Student Support Portal" <${process.env.EMAIL_USER}>`,
+//     to,
+//     subject,
+//     html,
+//   });
+//   return info;
+// };
+
+const { Resend } = require("resend");
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const sendMail = async ({ to, subject, html }) => {
-  const info = await transporter.sendMail({
-    from: `"Student Support Portal" <${process.env.EMAIL_USER}>`,
+  const response = await resend.emails.send({
+    from: "Student Support Portal <onboarding@resend.dev>",
     to,
     subject,
     html,
   });
-  return info;
+
+  console.log("✅ Email sent:", response);
+  return response;
 };
 
 const sendRegistrationEmail = async (student) => {
