@@ -30,7 +30,7 @@ exports.registerStudent = async (req, res) => {
         .json({ message: "Name, email, and password are required" });
     }
 
-    const nameRegex = /^[A-Za-z\s]+$/;
+    const nameRegex = /^[A-Za-z\s\u0900-\u097F'-]+$/;
     if (!nameRegex.test(name.trim())) {
       return res
         .status(400)

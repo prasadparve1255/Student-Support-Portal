@@ -6,8 +6,7 @@ const StudentSchema = new mongoose.Schema({
   type: String,
   required: [true, 'Name is required'],
   trim: true,
-  minlength: 3,
-  match: [/^[A-Za-z\s]+$/, 'Name should contain only letters and spaces']
+  minlength: 2,
 },
   email: {
   type: String,
