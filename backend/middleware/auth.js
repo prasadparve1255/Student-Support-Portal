@@ -17,18 +17,18 @@ const verifyToken = async (req, res, next) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    if (decoded.role === "admin") {
+    if (decoded.role === "MAIN_ADMIN" || decoded.role === "DEPARTMENT_ADMIN") {
       const admin = await Admin.findById(decoded.id)
         .select("-password")
         .populate("department", "name code");
       if (!admin) {
         return res.status(401).json({
-          message: "Admin not found",
+          message: "Authorization failed: Admin not found",
         });
       }
       req.user = {
         ...admin.toObject(),
-        role: decoded.isMainAdmin ? "MAIN_ADMIN" : "DEPARTMENT_ADMIN",
+        role: decoded.role,
       };
     } else {
       const student = await Student.findById(decoded.id).select("-password");

@@ -511,97 +511,105 @@ const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-xl shadow-lg p-4 mb-6 border border-gray-100">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder={
-                  activeTab === "complaints"
-                    ? "Search complaints..."
-                    : "Search students..."
-                }
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+
+            {/* Search */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Search</label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input type="text"
+                  placeholder={activeTab === "complaints" ? "Subject, student..." : "Name, ID, email..."}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                />
+              </div>
             </div>
 
+            {/* Status */}
             {activeTab === "complaints" && (
-              <div className="relative">
-                <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
-                >
-                  <option value="all">All Status</option>
-                  {complaintView === 'active' ? (
-                    <>
-                      <option value="Pending">Pending</option>
-                      <option value="In Progress">In Progress</option>
-                    </>
-                  ) : (
-                    <option value="Resolved">Resolved</option>
-                  )}
-                </select>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Status</label>
+                <div className="relative">
+                  <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none text-sm">
+                    <option value="all">All Status</option>
+                    {complaintView === 'active' ? (
+                      <><option value="Pending">Pending</option><option value="In Progress">In Progress</option></>
+                    ) : (
+                      <option value="Resolved">Resolved</option>
+                    )}
+                  </select>
+                </div>
               </div>
             )}
 
-            <div className="relative">
-              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <select
-                value={departmentFilter}
-                onChange={(e) => setDepartmentFilter(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
-              >
-                {authState.currentAdmin?.isMainAdmin ? (
-                  <>
+            {/* Department — Main Admin only */}
+            {authState.currentAdmin?.isMainAdmin && (
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Department</label>
+                <div className="relative">
+                  <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <select value={departmentFilter} onChange={(e) => setDepartmentFilter(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none text-sm">
                     <option value="all">All Departments</option>
-                    {uniqueDepartments.map((dept) => (
-                      <option key={dept} value={dept}>
-                        {dept}
-                      </option>
-                    ))}
-                  </>
-                ) : (
-                  <option value={authState.currentAdmin?.department}>
-                    {authState.currentAdmin?.department}
-                  </option>
-                )}
-              </select>
-            </div>
-
-
-
-            {activeTab === "complaints" && (
-              <>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <input
-                    type="date"
-                    value={dateFromFilter}
-                    onChange={(e) => setDateFromFilter(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="From Date"
-                  />
-                  <span className="absolute -bottom-4 left-3 text-xs text-gray-400">From</span>
+                    {uniqueDepartments.map((dept) => (<option key={dept} value={dept}>{dept}</option>))}
+                  </select>
                 </div>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <input
-                    type="date"
-                    value={dateToFilter}
-                    onChange={(e) => setDateToFilter(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="To Date"
-                  />
-                  <span className="absolute -bottom-4 left-3 text-xs text-gray-400">To</span>
-                </div>
-              </>
+              </div>
             )}
+
+            {/* From Date */}
+            {activeTab === "complaints" && (
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">From Date</label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input type="date" value={dateFromFilter}
+                    onChange={(e) => setDateFromFilter(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* To Date */}
+            {activeTab === "complaints" && (
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">To Date</label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input type="date" value={dateToFilter}
+                    onChange={(e) => setDateToFilter(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  />
+                </div>
+              </div>
+            )}
+
           </div>
+
+          {/* Active filter chips + Clear button */}
+          {(searchTerm || statusFilter !== 'all' || departmentFilter !== 'all' || dateFromFilter || dateToFilter) && (
+            <div className="mt-4 flex items-center justify-between flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2">
+                {searchTerm && <span className="px-2.5 py-1 bg-blue-50 text-blue-600 text-xs rounded-full border border-blue-100">🔍 {searchTerm}</span>}
+                {statusFilter !== 'all' && <span className="px-2.5 py-1 bg-orange-50 text-orange-600 text-xs rounded-full border border-orange-100">{statusFilter}</span>}
+                {departmentFilter !== 'all' && <span className="px-2.5 py-1 bg-purple-50 text-purple-600 text-xs rounded-full border border-purple-100">{departmentFilter}</span>}
+                {dateFromFilter && <span className="px-2.5 py-1 bg-green-50 text-green-600 text-xs rounded-full border border-green-100">From: {dateFromFilter}</span>}
+                {dateToFilter && <span className="px-2.5 py-1 bg-green-50 text-green-600 text-xs rounded-full border border-green-100">To: {dateToFilter}</span>}
+              </div>
+              <button
+                onClick={() => { setSearchTerm(''); setStatusFilter('all'); setDepartmentFilter('all'); setDateFromFilter(''); setDateToFilter(''); }}
+                className="text-xs text-red-500 hover:text-red-700 px-3 py-1.5 bg-red-50 rounded-lg border border-red-100 transition-colors"
+              >
+                ✕ Clear All
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Content Based on Active Tab */}

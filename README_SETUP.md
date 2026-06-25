@@ -67,11 +67,11 @@ PORT=5000
 MONGO_URI=mongodb://localhost:27017/digital_complaint_system
 JWT_SECRET=your_jwt_secret_key_here
 NODE_ENV=development
-FRONTEND_URL=http://localhost:3000
+FRONTEND_URL=http://localhost:5173
 
 # Email Configuration
-EMAIL_USER=your-email@gmail.com
-EMAIL_PASSWORD=your-app-password
+# For production, use RESEND_API_KEY and EMAIL_FROM
+# EMAIL_USER and EMAIL_PASSWORD are no longer used
 
 # Default passwords for seeding
 DEFAULT_ADMIN_PASSWORD=admin123

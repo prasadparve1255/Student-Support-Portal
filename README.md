@@ -194,8 +194,8 @@ npm start
 2. Connect your GitHub repo
 3. Set:
    - Root Directory: `backend`
-   - Build Command: `npm install`
-   - Start Command: `node server.js`
+   - Build Command: `npm install && npm run build --prefix ../project`
+   - Start Command: `npm start`
 4. Add all environment variables from `backend/.env`
 
 ### Frontend → [Vercel](https://vercel.com)

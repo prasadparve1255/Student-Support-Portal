@@ -57,17 +57,14 @@ exports.registerStudent = async (req, res) => {
     const studentResponse = student.toObject();
     delete studentResponse.password;
 
-    // Email pathav (5 sec timeout)
-    const emailPromise = sendRegistrationEmail({
+    // Email pathav (background madhe, response block n karta)
+    sendRegistrationEmail({
       name,
       email,
       studentId,
       department: departmentName,
       originalPassword: password,
     }).catch(e => console.error('Student email failed:', e.message));
-
-    const timeout = new Promise(resolve => setTimeout(resolve, 5000));
-    await Promise.race([emailPromise, timeout]);
 
     res.status(201).json({
       ...studentResponse,

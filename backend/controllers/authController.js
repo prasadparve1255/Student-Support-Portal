@@ -38,12 +38,11 @@ exports.setupAdmin = async (req, res) => {
 };
 
 // Generate JWT token
-const generateToken = (id, role, isMainAdmin = false, department = null) => {
+const generateToken = (id, role, department = null) => {
   return jwt.sign(
     {
       id,
       role,
-      isMainAdmin,
       department,
     },
     process.env.JWT_SECRET,
@@ -123,10 +122,7 @@ exports.adminLogin = async (req, res) => {
     }
 
     const token = generateToken(
-      admin._id,
-      "admin",
-      admin.isMainAdmin,
-      admin.department?._id || admin.department,
+      admin._id, admin.isMainAdmin ? "MAIN_ADMIN" : "DEPARTMENT_ADMIN", admin.department?._id || admin.department
     );
 
     res.status(200).json({

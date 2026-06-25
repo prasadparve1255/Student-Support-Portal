@@ -62,6 +62,7 @@ export const useStudents = (): StudentHook => {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setStudents(response.data);
+            localStorage.setItem('students', JSON.stringify(response.data)); // Save to localStorage on success
             setError(null);
         } catch (err: any) {
             // Fallback to localStorage on API error
@@ -69,11 +70,7 @@ export const useStudents = (): StudentHook => {
             const localStudents = JSON.parse(localStorage.getItem('students') || '[]');
             const mappedStudents = localStudents.map((s: any) => ({
                 _id: s.id,
-                name: s.name,
-                email: s.email,
-                studentId: s.id,
-                department: s.department,
-                createdAt: new Date().toISOString()
+                ...s
             }));
             setStudents(mappedStudents);
             setError(null);

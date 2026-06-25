@@ -15,8 +15,8 @@ git push -u origin main
 1. https://render.com वर जा → New Web Service
 2. GitHub repo connect करा
 3. खालील settings द्या:
-   - **Build Command:** `cd project && npm install && npm run build`
-   - **Start Command:** `cd backend && npm install && node server.js`
+   - **Build Command:** `npm install && npm run build --prefix project && npm install --prefix backend`
+   - **Start Command:** `npm run start --prefix backend`
    - **Environment:** Node
 
 ### Step 3 — Environment Variables set करा
@@ -27,9 +27,9 @@ Render Dashboard → Environment मध्ये खालील variables add �
 | `NODE_ENV` | `production` |
 | `MONGO_URI` | your MongoDB Atlas connection string |
 | `JWT_SECRET` | any random secret key |
-| `FRONTEND_URL` | your render app URL (e.g. https://student-support-portal.onrender.com) |
-| `EMAIL_USER` | your Gmail address |
-| `EMAIL_PASSWORD` | your Gmail App Password |
+| `FRONTEND_URL` | your render app URL (e.g., https://student-support-portal.onrender.com) |
+| `RESEND_API_KEY` | your Resend API key (from resend.com) |
+| `EMAIL_FROM` | your verified domain email from Resend (e.g., `noreply@yourdomain.com`) |
 
 ---
 
