@@ -105,16 +105,16 @@ const ClassManagement: React.FC = () => {
         </h2>
         <button
           onClick={openAdd}
-          className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+          className="flex items-center font-medium space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="h-4" />
           <span>Add Class</span>
         </button>
       </div>
 
       {/* Main Admin — department selector */}
       {isMainAdmin && (
-        <div className="mb-4">
+        <div className="mb-4 font-medium">
           <select
             value={selectedDeptId}
             onChange={e => { setSelectedDeptId(e.target.value); setPage(1); }}
@@ -140,7 +140,7 @@ const ClassManagement: React.FC = () => {
         <table className="w-full">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">#</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">SR.No</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Class Name</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
               <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Students</th>
@@ -158,11 +158,11 @@ const ClassManagement: React.FC = () => {
                 </td>
               </tr>
             ) : pagedClasses.map((c, i) => (
-              <tr key={c._id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 text-sm text-gray-500">{(page - 1) * PER_PAGE + i + 1}</td>
+              <tr key={c._id} className="hover:bg-[#B3CFE5]">
+                <td className="px-6 py-4 text-sm font-medium text-gray-900">{(page - 1) * PER_PAGE + i + 1}</td>
                 <td className="px-6 py-4 text-sm font-medium text-gray-900">{c.name}</td>
-                <td className="px-6 py-4 text-sm text-gray-500">{c.description || '—'}</td>
-                <td className="px-6 py-4 text-center">
+                <td className="px-6 py-4 text-sm font-medium text-gray-900">{c.description || '—'}</td>
+                <td className="px-6 py-4 font-medium text-center">
                   <span className="inline-flex items-center space-x-1 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-semibold">
                     <Users className="h-3.5 w-3.5" />
                     <span>{getStudentCount(c.name)}</span>

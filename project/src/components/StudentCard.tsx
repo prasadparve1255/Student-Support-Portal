@@ -96,20 +96,20 @@ const StudentCard: React.FC<StudentCardProps> = ({ student, onEdit, onDelete }) 
 
   return (
     <>
-      <tr className="hover:bg-gray-50">
-        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+      <tr className="hover:bg-[#B3CFE5]">
+        <td className="px-6 py-4 font-medium whitespace-nowrap text-sm font-medium text-gray-900">
           {student.studentId}
         </td>
-        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+        <td className="px-6 py-4 font-medium whitespace-nowrap text-sm text-gray-900">
           {student.name}
         </td>
-        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+        <td className="px-6 py-4 font-medium whitespace-nowrap text-sm text-gray-900">
           {student.email}
         </td>
-        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+        <td className="px-6 py-4 font-medium whitespace-nowrap text-sm text-gray-900">
           {deptName}
         </td>
-        <td className="px-6 py-4 whitespace-nowrap text-sm">
+        <td className="px-6 py-4 font-medium whitespace-nowrap text-sm text-gray-900">
           {className ? (
             <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
               {className}

@@ -2,6 +2,7 @@ import React, { useState, useMemo } from "react";
 import {
   Search,
   Filter,
+  FileText,
   Clock,
   CheckCircle,
   Users,
@@ -11,6 +12,8 @@ import {
   MoreHorizontal,
   Mail,
   Send,
+  Building2,
+  Tag,
   Download,
   LogOut,
   GraduationCap,
@@ -18,6 +21,15 @@ import {
   Paperclip,
   FileText as FileIcon,
 } from "lucide-react";
+
+// import {
+//   Calendar,
+//   Clock,
+//   MoreHorizontal,
+//   Building2,
+//   Tag,
+//   GraduationCap,
+// } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useComplaints } from "../hooks/useComplaints";
 import { useAuthContext as useAuth } from "../context/AuthContext";
@@ -40,7 +52,9 @@ const AdminDashboard: React.FC = () => {
   const { authState, logout } = useAuth();
   const { students, refreshStudents } = useStudents();
   const { departments } = useDepartments();
-  const adminDeptId = departments.find(d => d.name === authState.currentAdmin?.department)?._id;
+  const adminDeptId = departments.find(
+    (d) => d.name === authState.currentAdmin?.department,
+  )?._id;
   const { classes } = useClasses(adminDeptId);
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
@@ -49,7 +63,9 @@ const AdminDashboard: React.FC = () => {
   const [classFilter] = useState<string>("all");
   const [dateFromFilter, setDateFromFilter] = useState<string>("");
   const [dateToFilter, setDateToFilter] = useState<string>("");
-  const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
+  const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(
+    null,
+  );
   const [adminResponse, setAdminResponse] = useState("");
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [isBackingUp, setIsBackingUp] = useState(false);
@@ -58,7 +74,9 @@ const AdminDashboard: React.FC = () => {
   >("complaints");
   const [complaintsPage, setComplaintsPage] = useState(1);
   const [studentsPage, setStudentsPage] = useState(1);
-  const [complaintView, setComplaintView] = useState<'active' | 'resolved'>('active');
+  const [complaintView, setComplaintView] = useState<"active" | "resolved">(
+    "active",
+  );
 
   const stats: ComplaintStats = useMemo(() => {
     const today = new Date().toDateString();
@@ -67,7 +85,9 @@ const AdminDashboard: React.FC = () => {
       pending: complaints.filter((c) => c.status === "Pending").length,
       inProgress: complaints.filter((c) => c.status === "In Progress").length,
       resolved: complaints.filter((c) => c.status === "Resolved").length,
-      today: complaints.filter((c) => new Date(c.createdAt).toDateString() === today).length,
+      today: complaints.filter(
+        (c) => new Date(c.createdAt).toDateString() === today,
+      ).length,
     };
   }, [complaints]);
 
@@ -134,9 +154,10 @@ const AdminDashboard: React.FC = () => {
           departmentFilter === "all" ||
           complaint.department === departmentFilter;
         const complaintDate = new Date(complaint.createdAt);
-        const matchesDate = 
+        const matchesDate =
           (!dateFromFilter || complaintDate >= new Date(dateFromFilter)) &&
-          (!dateToFilter || complaintDate <= new Date(dateToFilter + 'T23:59:59'));
+          (!dateToFilter ||
+            complaintDate <= new Date(dateToFilter + "T23:59:59"));
         const matchesClass =
           classFilter === "all" || (complaint as any).class === classFilter;
         const adminDepartmentFilter =
@@ -144,9 +165,9 @@ const AdminDashboard: React.FC = () => {
             ? complaint.department === authState.currentAdmin.department
             : true;
         const matchesView =
-          complaintView === 'resolved'
-            ? complaint.status === 'Resolved'
-            : complaint.status !== 'Resolved';
+          complaintView === "resolved"
+            ? complaint.status === "Resolved"
+            : complaint.status !== "Resolved";
 
         return (
           matchesSearch &&
@@ -174,8 +195,20 @@ const AdminDashboard: React.FC = () => {
     complaintView,
   ]);
 
-  React.useEffect(() => { setComplaintsPage(1); }, [searchTerm, statusFilter, departmentFilter, classFilter, dateFromFilter, dateToFilter, complaintView]);
-  React.useEffect(() => { setStudentsPage(1); }, [searchTerm, departmentFilter, classFilter]);
+  React.useEffect(() => {
+    setComplaintsPage(1);
+  }, [
+    searchTerm,
+    statusFilter,
+    departmentFilter,
+    classFilter,
+    dateFromFilter,
+    dateToFilter,
+    complaintView,
+  ]);
+  React.useEffect(() => {
+    setStudentsPage(1);
+  }, [searchTerm, departmentFilter, classFilter]);
 
   const filteredStudents = useMemo(() => {
     return students.filter((student) => {
@@ -205,9 +238,20 @@ const AdminDashboard: React.FC = () => {
             authState.currentAdmin.department?.toLowerCase()
           : true;
 
-      return matchesSearch && matchesDepartment && matchesClass && adminDepartmentFilter;
+      return (
+        matchesSearch &&
+        matchesDepartment &&
+        matchesClass &&
+        adminDepartmentFilter
+      );
     });
-  }, [students, searchTerm, departmentFilter, classFilter, authState.currentAdmin]);
+  }, [
+    students,
+    searchTerm,
+    departmentFilter,
+    classFilter,
+    authState.currentAdmin,
+  ]);
 
   const uniqueDepartments = useMemo(() => {
     return departments.map((d) => d.name);
@@ -238,43 +282,50 @@ const AdminDashboard: React.FC = () => {
   const handleBackup = async () => {
     setIsBackingUp(true);
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       const res = await fetch(`${API_BASE}/admin/backup/download`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) throw new Error('Backup failed');
+      if (!res.ok) throw new Error("Backup failed");
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      const disposition = res.headers.get('Content-Disposition') || '';
-      const filename = disposition.match(/filename="(.+)"$/)?.[1] || `backup-${new Date().toISOString().slice(0,10)}.json`;
+      const a = document.createElement("a");
+      const disposition = res.headers.get("Content-Disposition") || "";
+      const filename =
+        disposition.match(/filename="(.+)"$/)?.[1] ||
+        `backup-${new Date().toISOString().slice(0, 10)}.json`;
       a.href = url;
       a.download = filename;
       a.click();
       URL.revokeObjectURL(url);
     } catch (err) {
-      alert('Backup failed. Please try again.');
+      alert("Backup failed. Please try again.");
     } finally {
       setIsBackingUp(false);
     }
   };
 
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br bg-[#b1c1e2] via-white to-blue-50">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
         {/* Header */}
         <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <div className="flex items-center space-x-3 mb-1">
-              <img src="/logo.svg" alt="logo" className="h-8 w-8 sm:h-10 sm:w-10" />
+              <img
+                src="/logo.svg"
+                alt="logo"
+                className="h-8 w-8 sm:h-10 sm:w-10"
+              />
               <div>
                 <h1 className="text-lg sm:text-2xl font-bold text-gray-900 leading-tight">
                   {authState.currentAdmin?.isMainAdmin
                     ? "Main Admin Dashboard"
                     : `${authState.currentAdmin?.department} Dashboard`}
                 </h1>
-                <p className="text-xs text-purple-600 font-semibold">Student Support Portal</p>
+                <p className="text-xs text-purple-600 font-semibold">
+                  Student Support Portal
+                </p>
               </div>
             </div>
             <p className="text-xs sm:text-sm text-gray-500 hidden sm:block">
@@ -300,7 +351,9 @@ const AdminDashboard: React.FC = () => {
               className="flex items-center space-x-1.5 px-3 py-2 bg-green-600 text-white hover:bg-green-700 rounded-lg transition-colors text-sm disabled:opacity-50"
             >
               <Download className="h-4 w-4" />
-              <span className="hidden sm:inline">{isBackingUp ? 'Backing up...' : 'Backup'}</span>
+              <span className="hidden sm:inline">
+                {isBackingUp ? "Backing up..." : "Backup"}
+              </span>
             </button>
             <button
               onClick={() => navigate("/profile")}
@@ -310,7 +363,10 @@ const AdminDashboard: React.FC = () => {
               <span className="hidden sm:inline">Profile</span>
             </button>
             <button
-              onClick={() => { logout(); navigate("/"); }}
+              onClick={() => {
+                logout();
+                navigate("/");
+              }}
               className="flex items-center space-x-1.5 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors text-sm"
             >
               <LogOut className="h-4 w-4" />
@@ -339,7 +395,7 @@ const AdminDashboard: React.FC = () => {
               <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">
+                    <p className="text-sm font-medium text-gray-900">
                       Total Complaints
                     </p>
                     <p className="text-2xl font-bold text-gray-900">
@@ -353,7 +409,7 @@ const AdminDashboard: React.FC = () => {
               <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Pending</p>
+                    <p className="text-sm font-medium text-gray-900">Pending</p>
                     <p className="text-2xl font-bold text-orange-600">
                       {stats.pending}
                     </p>
@@ -365,7 +421,7 @@ const AdminDashboard: React.FC = () => {
               <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">
+                    <p className="text-sm font-medium text-gray-900">
                       In Progress
                     </p>
                     <p className="text-2xl font-bold text-blue-600">
@@ -379,7 +435,7 @@ const AdminDashboard: React.FC = () => {
               <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">
+                    <p className="text-sm font-medium text-gray-900">
                       Resolved
                     </p>
                     <p className="text-2xl font-bold text-green-600">
@@ -392,9 +448,7 @@ const AdminDashboard: React.FC = () => {
               <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">
-                      Today
-                    </p>
+                    <p className="text-sm font-medium text-gray-900">Today</p>
                     <p className="text-2xl font-bold text-purple-600">
                       {stats.today}
                     </p>
@@ -445,22 +499,36 @@ const AdminDashboard: React.FC = () => {
               <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Total Classes</p>
-                    <p className="text-2xl font-bold text-purple-600">{classes.length}</p>
+                    <p className="text-sm font-medium text-gray-600">
+                      Total Classes
+                    </p>
+                    <p className="text-2xl font-bold text-purple-600">
+                      {classes.length}
+                    </p>
                   </div>
                   <GraduationCap className="h-8 w-8 text-purple-600" />
                 </div>
               </div>
               {classes.slice(0, 4).map((c) => (
-                <div key={c._id} className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+                <div
+                  key={c._id}
+                  className="bg-white rounded-xl shadow-lg p-6 border border-gray-100"
+                >
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-600 truncate max-w-[100px]">{c.name}</p>
+                      <p className="text-sm font-medium text-gray-600 truncate max-w-[100px]">
+                        {c.name}
+                      </p>
                       <p className="text-2xl font-bold text-purple-600">
-                        {students.filter(s => {
-                          const sc = typeof (s as any).class === 'object' ? (s as any).class?.name : (s as any).class;
-                          return sc === c.name;
-                        }).length}
+                        {
+                          students.filter((s) => {
+                            const sc =
+                              typeof (s as any).class === "object"
+                                ? (s as any).class?.name
+                                : (s as any).class;
+                            return sc === c.name;
+                          }).length
+                        }
                       </p>
                     </div>
                     <GraduationCap className="h-8 w-8 text-purple-400" />
@@ -475,8 +543,12 @@ const AdminDashboard: React.FC = () => {
               <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Total Departments</p>
-                    <p className="text-2xl font-bold text-gray-900">{departments.length}</p>
+                    <p className="text-sm font-medium text-gray-600">
+                      Total Departments
+                    </p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {departments.length}
+                    </p>
                   </div>
                   <GraduationCap className="h-8 w-8 text-green-600" />
                 </div>
@@ -489,19 +561,23 @@ const AdminDashboard: React.FC = () => {
         <div className="bg-white rounded-xl shadow-lg p-3 mb-6 border border-gray-100">
           <div className="flex overflow-x-auto gap-2 scrollbar-hide">
             {[
-              { key: 'complaints', label: 'Complaints' },
-              { key: 'students', label: 'Students' },
-              ...(authState.currentAdmin?.isMainAdmin ? [{ key: 'departments', label: 'Departments' }] : []),
-              { key: 'classes', label: 'Classes' },
-              { key: 'reports', label: 'Reports' },
-            ].map(tab => (
+              { key: "complaints", label: "Complaints" },
+              { key: "students", label: "Students" },
+              ...(authState.currentAdmin?.isMainAdmin
+                ? [{ key: "departments", label: "Departments" }]
+                : []),
+              { key: "classes", label: "Classes" },
+              { key: "reports", label: "Reports" },
+            ].map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key as any)}
                 className={`px-4 py-2 font-medium rounded-lg transition-colors whitespace-nowrap text-sm ${
                   activeTab === tab.key
-                    ? tab.key === 'classes' ? 'bg-purple-600 text-white' : 'bg-blue-600 text-white'
-                    : 'text-gray-600 hover:bg-gray-100'
+                    ? tab.key === "classes"
+                      ? "bg-purple-600 text-white"
+                      : "bg-blue-600 text-white"
+                    : "text-gray-600 hover:bg-gray-100"
                 }`}
               >
                 {tab.label}
@@ -513,14 +589,20 @@ const AdminDashboard: React.FC = () => {
         {/* Filters */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-
             {/* Search */}
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Search</label>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+                Search
+              </label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input type="text"
-                  placeholder={activeTab === "complaints" ? "Subject, student..." : "Name, ID, email..."}
+                <input
+                  type="text"
+                  placeholder={
+                    activeTab === "complaints"
+                      ? "Subject, student..."
+                      : "Name, ID, email..."
+                  }
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
@@ -531,14 +613,22 @@ const AdminDashboard: React.FC = () => {
             {/* Status */}
             {activeTab === "complaints" && (
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Status</label>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+                  Status
+                </label>
                 <div className="relative">
                   <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none text-sm">
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none text-sm"
+                  >
                     <option value="all">All Status</option>
-                    {complaintView === 'active' ? (
-                      <><option value="Pending">Pending</option><option value="In Progress">In Progress</option></>
+                    {complaintView === "active" ? (
+                      <>
+                        <option value="Pending">Pending</option>
+                        <option value="In Progress">In Progress</option>
+                      </>
                     ) : (
                       <option value="Resolved">Resolved</option>
                     )}
@@ -550,13 +640,22 @@ const AdminDashboard: React.FC = () => {
             {/* Department — Main Admin only */}
             {authState.currentAdmin?.isMainAdmin && (
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Department</label>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+                  Department
+                </label>
                 <div className="relative">
                   <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <select value={departmentFilter} onChange={(e) => setDepartmentFilter(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none text-sm">
+                  <select
+                    value={departmentFilter}
+                    onChange={(e) => setDepartmentFilter(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none text-sm"
+                  >
                     <option value="all">All Departments</option>
-                    {uniqueDepartments.map((dept) => (<option key={dept} value={dept}>{dept}</option>))}
+                    {uniqueDepartments.map((dept) => (
+                      <option key={dept} value={dept}>
+                        {dept}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -565,10 +664,14 @@ const AdminDashboard: React.FC = () => {
             {/* From Date */}
             {activeTab === "complaints" && (
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">From Date</label>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+                  From Date
+                </label>
                 <div className="relative">
                   <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <input type="date" value={dateFromFilter}
+                  <input
+                    type="date"
+                    value={dateFromFilter}
                     onChange={(e) => setDateFromFilter(e.target.value)}
                     className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                   />
@@ -579,31 +682,64 @@ const AdminDashboard: React.FC = () => {
             {/* To Date */}
             {activeTab === "complaints" && (
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">To Date</label>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+                  To Date
+                </label>
                 <div className="relative">
                   <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <input type="date" value={dateToFilter}
+                  <input
+                    type="date"
+                    value={dateToFilter}
                     onChange={(e) => setDateToFilter(e.target.value)}
                     className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                   />
                 </div>
               </div>
             )}
-
           </div>
 
           {/* Active filter chips + Clear button */}
-          {(searchTerm || statusFilter !== 'all' || departmentFilter !== 'all' || dateFromFilter || dateToFilter) && (
+          {(searchTerm ||
+            statusFilter !== "all" ||
+            departmentFilter !== "all" ||
+            dateFromFilter ||
+            dateToFilter) && (
             <div className="mt-4 flex items-center justify-between flex-wrap gap-2">
               <div className="flex flex-wrap gap-2">
-                {searchTerm && <span className="px-2.5 py-1 bg-blue-50 text-blue-600 text-xs rounded-full border border-blue-100">🔍 {searchTerm}</span>}
-                {statusFilter !== 'all' && <span className="px-2.5 py-1 bg-orange-50 text-orange-600 text-xs rounded-full border border-orange-100">{statusFilter}</span>}
-                {departmentFilter !== 'all' && <span className="px-2.5 py-1 bg-purple-50 text-purple-600 text-xs rounded-full border border-purple-100">{departmentFilter}</span>}
-                {dateFromFilter && <span className="px-2.5 py-1 bg-green-50 text-green-600 text-xs rounded-full border border-green-100">From: {dateFromFilter}</span>}
-                {dateToFilter && <span className="px-2.5 py-1 bg-green-50 text-green-600 text-xs rounded-full border border-green-100">To: {dateToFilter}</span>}
+                {searchTerm && (
+                  <span className="px-2.5 py-1 bg-blue-50 text-blue-600 text-xs rounded-full border border-blue-100">
+                    🔍 {searchTerm}
+                  </span>
+                )}
+                {statusFilter !== "all" && (
+                  <span className="px-2.5 py-1 bg-orange-50 text-orange-600 text-xs rounded-full border border-orange-100">
+                    {statusFilter}
+                  </span>
+                )}
+                {departmentFilter !== "all" && (
+                  <span className="px-2.5 py-1 bg-purple-50 text-purple-600 text-xs rounded-full border border-purple-100">
+                    {departmentFilter}
+                  </span>
+                )}
+                {dateFromFilter && (
+                  <span className="px-2.5 py-1 bg-green-50 text-green-600 text-xs rounded-full border border-green-100">
+                    From: {dateFromFilter}
+                  </span>
+                )}
+                {dateToFilter && (
+                  <span className="px-2.5 py-1 bg-green-50 text-green-600 text-xs rounded-full border border-green-100">
+                    To: {dateToFilter}
+                  </span>
+                )}
               </div>
               <button
-                onClick={() => { setSearchTerm(''); setStatusFilter('all'); setDepartmentFilter('all'); setDateFromFilter(''); setDateToFilter(''); }}
+                onClick={() => {
+                  setSearchTerm("");
+                  setStatusFilter("all");
+                  setDepartmentFilter("all");
+                  setDateFromFilter("");
+                  setDateToFilter("");
+                }}
                 className="text-xs text-red-500 hover:text-red-700 px-3 py-1.5 bg-red-50 rounded-lg border border-red-100 transition-colors"
               >
                 ✕ Clear All
@@ -618,34 +754,71 @@ const AdminDashboard: React.FC = () => {
             {/* Active / Resolved toggle */}
             <div className="flex items-center gap-3">
               <button
-                onClick={() => setComplaintView('active')}
+                onClick={() => setComplaintView("active")}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  complaintView === 'active' ? 'bg-blue-600 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                  complaintView === "active"
+                    ? "bg-blue-600 text-white"
+                    : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
                 }`}
               >
-                Active <span className="ml-1 opacity-75">({complaints.filter(c => c.status !== 'Resolved' && (authState.currentAdmin?.isMainAdmin || c.department === authState.currentAdmin?.department)).length})</span>
+                Active{" "}
+                <span className="ml-1 opacity-75">
+                  (
+                  {
+                    complaints.filter(
+                      (c) =>
+                        c.status !== "Resolved" &&
+                        (authState.currentAdmin?.isMainAdmin ||
+                          c.department === authState.currentAdmin?.department),
+                    ).length
+                  }
+                  )
+                </span>
               </button>
               <button
-                onClick={() => setComplaintView('resolved')}
+                onClick={() => setComplaintView("resolved")}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  complaintView === 'resolved' ? 'bg-green-600 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                  complaintView === "resolved"
+                    ? "bg-green-600 text-white"
+                    : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
                 }`}
               >
-                Resolved <span className="ml-1 opacity-75">({complaints.filter(c => c.status === 'Resolved' && (authState.currentAdmin?.isMainAdmin || c.department === authState.currentAdmin?.department)).length})</span>
+                Resolved{" "}
+                <span className="ml-1 opacity-75">
+                  (
+                  {
+                    complaints.filter(
+                      (c) =>
+                        c.status === "Resolved" &&
+                        (authState.currentAdmin?.isMainAdmin ||
+                          c.department === authState.currentAdmin?.department),
+                    ).length
+                  }
+                  )
+                </span>
               </button>
             </div>
             <h2 className="text-lg font-bold text-gray-800">
-              {complaintView === 'resolved' ? 'Resolved Complaints' : 'Active Complaints'} <span className="text-gray-400 font-normal">({filteredComplaints.length})</span>
+              {complaintView === "resolved"
+                ? "Resolved Complaints"
+                : "Active Complaints"}{" "}
+              <span className="text-gray-400 font-normal">
+                ({filteredComplaints.length})
+              </span>
             </h2>
             {filteredComplaints.length === 0 ? (
               <div className="bg-white rounded-2xl border border-gray-100 p-16 text-center">
                 <MessageSquare className="h-14 w-14 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500 text-lg font-medium">No complaints found</p>
-                <p className="text-gray-400 mt-1">Try adjusting your filters or search terms</p>
+                <p className="text-gray-500 text-lg font-medium">
+                  No complaints found
+                </p>
+                <p className="text-gray-400 mt-1">
+                  Try adjusting your filters or search terms
+                </p>
               </div>
             ) : (
-              <>
-              <div className="space-y-4">
+              <div>
+                {/* <div className="space-y-4">
                 {filteredComplaints.slice((complaintsPage - 1) * PER_PAGE, complaintsPage * PER_PAGE).map((complaint) => (
                   <div key={complaint.id}
                     className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 hover:shadow-lg hover:border-blue-200 transition-all"
@@ -658,16 +831,16 @@ const AdminDashboard: React.FC = () => {
                         </span>
                       </div>
                       <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-sm text-gray-500 mb-3">
-                        <span><span className="font-medium text-gray-700">ID:</span> {complaint.studentId}</span>
-                        <span><span className="font-medium text-gray-700">Dept:</span> {complaint.department}</span>
-                        <span><span className="font-medium text-gray-700">Category:</span> {complaint.category}</span>
+                        <span><span className="font-medium text-gray-900">ID:</span> {complaint.studentId}</span>
+                        <span><span className="font-medium text-gray-900">Dept:</span> {complaint.department}</span>
+                        <span><span className="font-medium text-gray-900">Category:</span> {complaint.category}</span>
                         {(complaint as any).class && (
                           <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">
                             {(complaint as any).class}
                           </span>
                         )}
                       </div>
-                      <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed mb-4">{complaint.description}</p>
+                      <p className="font-medium text-gray-900 line-clamp-2 leading-relaxed mb-4">{complaint.description}</p>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4 text-sm text-gray-400">
                           <span className="flex items-center gap-1.5"><Calendar className="h-4 w-4" />{new Date(complaint.createdAt).toLocaleDateString()}</span>
@@ -692,21 +865,190 @@ const AdminDashboard: React.FC = () => {
                     </div>
                   </div>
                 ))}
+               </div> */}
+                <div className="space-y-4">
+                  {filteredComplaints
+                    .slice(
+                      (complaintsPage - 1) * PER_PAGE,
+                      complaintsPage * PER_PAGE,
+                    )
+                    .map((complaint) => (
+                      <div
+                        key={complaint.id}
+                        className="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md hover:border-blue-300 transition-all duration-200 p-4"
+                      >
+                        {/* Header */}
+
+                        <div className="flex justify-between items-start">
+                          <div className="flex items-start gap-3">
+                            <div className="w-12 h-12 rounded-lg bg-blue-50 flex items-center justify-center">
+                              <FileText className="w-6 h-6 text-blue-600" />
+                            </div>
+
+                            <div>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h3 className="text-lg font-semibold text-gray-900">
+                                  {complaint.subject}
+                                </h3>
+
+                                <span
+                                  className={`px-3 py-0.5 rounded-full text-xs font-semibold border ${getStatusColor(
+                                    complaint.status,
+                                  )}`}
+                                >
+                                  {complaint.status}
+                                </span>
+                              </div>
+
+                              <p className="text-sm text-gray-500 mt-0.5">
+                                Student ID :
+                                <span className="font-semibold text-gray-700 ml-1">
+                                  {complaint.studentId}
+                                </span>
+                              </p>
+                            </div>
+                          </div>
+
+                          <button
+                            onClick={() => setSelectedComplaint(complaint)}
+                            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
+                          >
+                            <MoreHorizontal className="w-4 h-4" />
+                            Manage
+                          </button>
+                        </div>
+
+                        {/* Info */}
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
+                          <div className="border rounded-lg p-3 flex items-center gap-3 bg-gray-50">
+                            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                              <Building2 className="w-5 h-5 text-blue-600" />
+                            </div>
+
+                            <div>
+                              <p className="text-xs text-gray-500">
+                                Department
+                              </p>
+                              <h4 className="font-semibold text-base">
+                                {complaint.department}
+                              </h4>
+                            </div>
+                          </div>
+
+                          <div className="border rounded-lg p-3 flex items-center gap-3 bg-gray-50">
+                            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                              <Tag className="w-5 h-5 text-green-600" />
+                            </div>
+
+                            <div>
+                              <p className="text-xs text-gray-500">Category</p>
+                              <h4 className="font-semibold text-base">
+                                {complaint.category}
+                              </h4>
+                            </div>
+                          </div>
+
+                          <div className="border rounded-lg p-3 flex items-center gap-3 bg-gray-50">
+                            <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                              <GraduationCap className="w-5 h-5 text-purple-600" />
+                            </div>
+
+                            <div>
+                              <p className="text-xs text-gray-500">Class</p>
+                              <h4 className="font-semibold text-base">
+                                {(complaint as any).class || "-"}
+                              </h4>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Description */}
+
+                        <div className="mt-3">
+                          <h4 className="text-sm font-semibold text-gray-700 mb-1">
+                            Description
+                          </h4>
+
+                          <p className="text-sm text-gray-600 leading-6 line-clamp-2">
+                            {complaint.description}
+                          </p>
+                        </div>
+
+                        {/* Footer */}
+
+                        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-3 mt-4 border-t pt-3">
+                          <div className="flex flex-wrap gap-5 text-xs text-gray-500">
+                            <div className="flex items-center gap-1">
+                              <Calendar className="w-4 h-4" />
+                              Created :
+                              {new Date(
+                                complaint.createdAt,
+                              ).toLocaleDateString()}
+                            </div>
+
+                            {complaint.updatedAt !== complaint.createdAt && (
+                              <div className="flex items-center gap-1">
+                                <Clock className="w-4 h-4" />
+                                Updated :
+                                {new Date(
+                                  complaint.updatedAt,
+                                ).toLocaleDateString()}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* {complaint.adminResponse && (
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg px-2 py-1 max-w-md">
+                              <h4 className="text-sm font-semibold text-blue-700">
+                                Admin Response
+                              </h4>
+
+                              <p className="text-sm text-blue-700 mt-0.5 line-clamp-4">
+                                {complaint.adminResponse}
+                              </p>
+                            </div>
+                          )} */}
+                          {complaint.adminResponse && (
+                            <div className="mt-3 flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 w-full lg:max-w-md">
+                              {/* Icon */}
+                              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm">
+                                <MessageSquare className="h-5 w-5 text-blue-600" />
+                              </div>
+
+                              {/* Content */}
+                              <div className="flex-1">
+                                <h4 className="text-sm font-semibold text-blue-700">
+                                  Admin Response
+                                </h4>
+
+                                <p className="mt-0.5 text-sm text-blue-700 leading-6">
+                                  {complaint.adminResponse}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                </div>
+                <Pagination
+                  currentPage={complaintsPage}
+                  totalItems={filteredComplaints.length}
+                  perPage={PER_PAGE}
+                  onPageChange={setComplaintsPage}
+                />
               </div>
-              <Pagination
-                currentPage={complaintsPage}
-                totalItems={filteredComplaints.length}
-                perPage={PER_PAGE}
-                onPageChange={setComplaintsPage}
-              />
-              </>
             )}
           </div>
         ) : activeTab === "students" ? (
           <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
             <div className="p-6 border-b border-gray-200">
               <h2 className="text-lg font-bold text-gray-800">
-                Students <span className="text-gray-400 font-normal">({filteredStudents.length})</span>
+                Students{" "}
+                <span className="text-gray-400 font-normal">
+                  ({filteredStudents.length})
+                </span>
               </h2>
             </div>
 
@@ -744,14 +1086,19 @@ const AdminDashboard: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredStudents.slice((studentsPage - 1) * PER_PAGE, studentsPage * PER_PAGE).map((student) => (
-                      <StudentCard
-                        key={student._id}
-                        student={student}
-                        onEdit={refreshStudents}
-                        onDelete={refreshStudents}
-                      />
-                    ))}
+                    {filteredStudents
+                      .slice(
+                        (studentsPage - 1) * PER_PAGE,
+                        studentsPage * PER_PAGE,
+                      )
+                      .map((student) => (
+                        <StudentCard
+                          key={student._id}
+                          student={student}
+                          onEdit={refreshStudents}
+                          onDelete={refreshStudents}
+                        />
+                      ))}
                   </tbody>
                 </table>
               </div>
@@ -793,60 +1140,119 @@ const AdminDashboard: React.FC = () => {
               <div className="p-6">
                 {/* Student Info */}
                 <div className="mb-4 grid grid-cols-2 gap-2 text-sm bg-gray-50 p-3 rounded-lg">
-                  <div><span className="font-medium text-gray-500">Student ID:</span> <span className="text-gray-900">{selectedComplaint.studentId}</span></div>
-                  <div><span className="font-medium text-gray-500">Department:</span> <span className="text-gray-900">{selectedComplaint.department}</span></div>
-                  <div><span className="font-medium text-gray-500">Category:</span> <span className="text-gray-900">{selectedComplaint.category}</span></div>
+                  <div>
+                    <span className="font-medium text-gray-500">
+                      Student ID:
+                    </span>{" "}
+                    <span className="text-gray-900">
+                      {selectedComplaint.studentId}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-500">
+                      Department:
+                    </span>{" "}
+                    <span className="text-gray-900">
+                      {selectedComplaint.department}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-500">Category:</span>{" "}
+                    <span className="text-gray-900">
+                      {selectedComplaint.category}
+                    </span>
+                  </div>
                   {(selectedComplaint as any).class && (
-                    <div><span className="font-medium text-gray-500">Class:</span> <span className="text-gray-900">{(selectedComplaint as any).class}</span></div>
+                    <div>
+                      <span className="font-medium text-gray-500">Class:</span>{" "}
+                      <span className="text-gray-900">
+                        {(selectedComplaint as any).class}
+                      </span>
+                    </div>
                   )}
-                  <div><span className="font-medium text-gray-500">Submitted:</span> <span className="text-gray-900">{new Date(selectedComplaint.createdAt).toLocaleDateString()}</span></div>
+                  <div>
+                    <span className="font-medium text-gray-500">
+                      Submitted:
+                    </span>{" "}
+                    <span className="text-gray-900">
+                      {new Date(
+                        selectedComplaint.createdAt,
+                      ).toLocaleDateString()}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="mb-6">
-                  <h3 className="font-semibold text-gray-900 mb-2">Current Status</h3>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(selectedComplaint.status)}`}>
+                  <h3 className="font-semibold text-gray-900 mb-2">
+                    Current Status
+                  </h3>
+                  <span
+                    className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(selectedComplaint.status)}`}
+                  >
                     {selectedComplaint.status}
                   </span>
                 </div>
 
                 <div className="mb-6">
-                  <h3 className="font-semibold text-gray-900 mb-2">Complaint Details</h3>
+                  <h3 className="font-semibold text-gray-900 mb-2">
+                    Complaint Details
+                  </h3>
                   <div className="bg-gray-50 p-4 rounded-lg">
-                    <p className="text-sm text-gray-700">{selectedComplaint.description}</p>
+                    <p className="text-sm text-gray-700">
+                      {selectedComplaint.description}
+                    </p>
                   </div>
                 </div>
 
                 {/* Attachments */}
-                {selectedComplaint.attachments && selectedComplaint.attachments.length > 0 && (
-                  <div className="mb-6">
-                    <h3 className="font-semibold text-gray-900 mb-3 flex items-center space-x-2">
-                      <Paperclip className="h-4 w-4" />
-                      <span>Attachments ({selectedComplaint.attachments.length})</span>
-                    </h3>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                      {selectedComplaint.attachments.map((url, i) => {
-                        const isPdf = url.toLowerCase().endsWith('.pdf');
-                        return isPdf ? (
-                          <a key={i} href={url} target="_blank" rel="noopener noreferrer"
-                            className="flex items-center space-x-2 p-3 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors">
-                            <FileIcon className="h-5 w-5 text-red-500 shrink-0" />
-                            <span className="text-xs text-red-700 truncate">{url.split('/').pop()}</span>
-                          </a>
-                        ) : (
-                          <a key={i} href={url} target="_blank" rel="noopener noreferrer">
-                            <img src={url} alt={`attachment-${i + 1}`}
-                              className="w-full h-28 object-cover rounded-lg border border-gray-200 hover:opacity-80 transition-opacity cursor-pointer"
-                              onError={(e) => {
-                                const el = e.target as HTMLImageElement;
-                                el.parentElement!.innerHTML = '<div class="w-full h-28 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 text-xs border">Image not found</div>';
-                              }}
-                            />
-                          </a>
-                        );
-                      })}
+                {selectedComplaint.attachments &&
+                  selectedComplaint.attachments.length > 0 && (
+                    <div className="mb-6">
+                      <h3 className="font-semibold text-gray-900 mb-3 flex items-center space-x-2">
+                        <Paperclip className="h-4 w-4" />
+                        <span>
+                          Attachments ({selectedComplaint.attachments.length})
+                        </span>
+                      </h3>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        {selectedComplaint.attachments.map((url, i) => {
+                          const isPdf = url.toLowerCase().endsWith(".pdf");
+                          return isPdf ? (
+                            <a
+                              key={i}
+                              href={url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center space-x-2 p-3 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
+                            >
+                              <FileIcon className="h-5 w-5 text-red-500 shrink-0" />
+                              <span className="text-xs text-red-700 truncate">
+                                {url.split("/").pop()}
+                              </span>
+                            </a>
+                          ) : (
+                            <a
+                              key={i}
+                              href={url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <img
+                                src={url}
+                                alt={`attachment-${i + 1}`}
+                                className="w-full h-28 object-cover rounded-lg border border-gray-200 hover:opacity-80 transition-opacity cursor-pointer"
+                                onError={(e) => {
+                                  const el = e.target as HTMLImageElement;
+                                  el.parentElement!.innerHTML =
+                                    '<div class="w-full h-28 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 text-xs border">Image not found</div>';
+                                }}
+                              />
+                            </a>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
                 <div className="mb-6">
                   <label className="block text-sm font-medium text-gray-700 mb-2">

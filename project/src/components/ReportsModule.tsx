@@ -361,15 +361,15 @@ const ReportsModule: React.FC = () => {
                 </td>
               </tr>
             ) : filteredData.slice((page - 1) * PER_PAGE, page * PER_PAGE).map(c => (
-              <tr key={c.id} className="hover:bg-gray-50 transition-colors">
+              <tr key={c.id} className="hover:bg-[#B3CFE5] transition-colors">
                 <td className="px-4 py-3">
                   <p className="font-medium text-gray-900">{c.studentName}</p>
-                  <p className="text-xs text-gray-400">{c.studentId}</p>
+                  <p className="font-medium text-gray-900">{c.studentId}</p>
                 </td>
-                <td className="px-4 py-3 text-gray-600">{c.department}</td>
-                <td className="px-4 py-3 text-gray-600">{(c as any).class || <span className="text-gray-300">—</span>}</td>
-                <td className="px-4 py-3 max-w-[200px] truncate text-gray-700">{c.subject}</td>
-                <td className="px-4 py-3">
+                <td className="px-4 font-medium py-3 text-gray-900">{c.department}</td>
+                <td className="px-4 font-medium py-3 text-gray-900">{(c as any).class || <span className="text-gray-300">—</span>}</td>
+                <td className="px-4 font-medium py-3 max-w-[200px] truncate text-gray-900">{c.subject}</td>
+                <td className="px-4 font-medium py-3">
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[c.status] || 'bg-gray-100 text-gray-700'}`}>
                     {c.status}
                   </span>

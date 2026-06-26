@@ -1,23 +1,48 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from "react";
 import {
-  Plus, Search, Filter, Clock, CheckCircle, FileText,
-  Calendar, Building, Tag, MessageSquare, TrendingUp,
-  Eye, LogOut, UserCircle, Paperclip, ChevronRight,
-  AlertCircle, Inbox, ArrowLeft, Trash2,
-} from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { useComplaints } from '../hooks/useComplaints';
-import { useAuthContext as useAuth } from '../context/AuthContext';
-import { Complaint } from '../types/complaint';
-import ComplaintForm from './ComplaintForm';
+  Plus,
+  Search,
+  Filter,
+  Clock,
+  CheckCircle,
+  FileText,
+  Calendar,
+  Building,
+  Tag,
+  MessageSquare,
+  TrendingUp,
+  Eye,
+  LogOut,
+  UserCircle,
+  Paperclip,
+  ChevronRight,
+  AlertCircle,
+  Inbox,
+  ArrowLeft,
+  Trash2,
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useComplaints } from "../hooks/useComplaints";
+import { useAuthContext as useAuth } from "../context/AuthContext";
+import { Complaint } from "../types/complaint";
+import ComplaintForm from "./ComplaintForm";
 
 const StudentDashboard: React.FC = () => {
-  const { complaints, markNotificationAsRead, loadComplaints, deleteComplaint } = useComplaints();
+  const {
+    complaints,
+    markNotificationAsRead,
+    loadComplaints,
+    deleteComplaint,
+  } = useComplaints();
   const { authState, logout } = useAuth();
-  const [currentView, setCurrentView] = useState<'dashboard' | 'new-complaint' | 'view-complaint' | 'history'>('dashboard');
-  const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [currentView, setCurrentView] = useState<
+    "dashboard" | "new-complaint" | "view-complaint" | "history"
+  >("dashboard");
+  const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(
+    null,
+  );
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -29,86 +54,147 @@ const StudentDashboard: React.FC = () => {
 
   const studentComplaints = useMemo(() => {
     if (!authState.currentStudent?.id) return [];
-    return complaints.filter(c => c.studentId === authState.currentStudent?.id && !c.isArchived);
+    return complaints.filter(
+      (c) => c.studentId === authState.currentStudent?.id && !c.isArchived,
+    );
   }, [complaints, authState.currentStudent?.id]);
 
   const archivedComplaints = useMemo(() => {
     if (!authState.currentStudent?.id) return [];
-    return complaints.filter(c => c.studentId === authState.currentStudent?.id && c.isArchived);
+    return complaints.filter(
+      (c) => c.studentId === authState.currentStudent?.id && c.isArchived,
+    );
   }, [complaints, authState.currentStudent?.id]);
 
-  const notifications = useMemo(() => studentComplaints.filter(c => c.isNotification), [studentComplaints]);
+  const notifications = useMemo(
+    () => studentComplaints.filter((c) => c.isNotification),
+    [studentComplaints],
+  );
 
   const filteredComplaints = useMemo(() => {
     return studentComplaints
-      .filter(c => {
-        const matchSearch = c.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      .filter((c) => {
+        const matchSearch =
+          c.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
           c.description.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchStatus = statusFilter === 'all' || c.status === statusFilter;
+        const matchStatus = statusFilter === "all" || c.status === statusFilter;
         return matchSearch && matchStatus;
       })
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
   }, [studentComplaints, searchTerm, statusFilter]);
 
-  const stats = useMemo(() => ({
-    total: studentComplaints.length,
-    pending: studentComplaints.filter(c => c.status === 'Pending').length,
-    inProgress: studentComplaints.filter(c => c.status === 'In Progress').length,
-    resolved: studentComplaints.filter(c => c.status === 'Resolved').length,
-  }), [studentComplaints]);
+  const stats = useMemo(
+    () => ({
+      total: studentComplaints.length,
+      pending: studentComplaints.filter((c) => c.status === "Pending").length,
+      inProgress: studentComplaints.filter((c) => c.status === "In Progress")
+        .length,
+      resolved: studentComplaints.filter((c) => c.status === "Resolved").length,
+    }),
+    [studentComplaints],
+  );
 
   const getStatusConfig = (status: string) => {
     switch (status) {
-      case 'Pending': return { color: 'bg-orange-100 text-orange-700 border-orange-200', dot: 'bg-orange-400', icon: <Clock className="h-3 w-3" /> };
-      case 'In Progress': return { color: 'bg-blue-100 text-blue-700 border-blue-200', dot: 'bg-blue-400', icon: <TrendingUp className="h-3 w-3" /> };
-      case 'Resolved': return { color: 'bg-green-100 text-green-700 border-green-200', dot: 'bg-green-400', icon: <CheckCircle className="h-3 w-3" /> };
-      default: return { color: 'bg-gray-100 text-gray-700 border-gray-200', dot: 'bg-gray-400', icon: null };
+      case "Pending":
+        return {
+          color: "bg-orange-100 text-orange-700 border-orange-200",
+          dot: "bg-orange-400",
+          icon: <Clock className="h-3 w-3" />,
+        };
+      case "In Progress":
+        return {
+          color: "bg-blue-100 text-blue-700 border-blue-200",
+          dot: "bg-blue-400",
+          icon: <TrendingUp className="h-3 w-3" />,
+        };
+      case "Resolved":
+        return {
+          color: "bg-green-100 text-green-700 border-green-200",
+          dot: "bg-green-400",
+          icon: <CheckCircle className="h-3 w-3" />,
+        };
+      default:
+        return {
+          color: "bg-gray-100 text-gray-700 border-gray-200",
+          dot: "bg-gray-400",
+          icon: null,
+        };
     }
   };
 
   if (!authState.currentStudent) return null;
 
-  if (currentView === 'new-complaint') return <ComplaintForm onBack={() => setCurrentView('dashboard')} />;
+  if (currentView === "new-complaint")
+    return <ComplaintForm onBack={() => setCurrentView("dashboard")} />;
 
   // ── History View ──
-  if (currentView === 'history') {
+  if (currentView === "history") {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-[#b1c1e2]">
         <div className="bg-white border-b border-gray-200 px-4 py-4">
           <div className="max-w-4xl mx-auto flex items-center space-x-3">
-            <button onClick={() => setCurrentView('dashboard')} className="p-2 hover:bg-gray-100 rounded-lg text-gray-500">
+            <button
+              onClick={() => setCurrentView("dashboard")}
+              className="p-2 hover:bg-gray-100 rounded-lg text-gray-500"
+            >
               <ArrowLeft className="h-5 w-5" />
             </button>
-            <h1 className="text-lg font-semibold text-gray-900">Complaint History</h1>
+            <h1 className="text-lg font-semibold text-gray-900">
+              Complaint History
+            </h1>
           </div>
         </div>
         <div className="max-w-4xl mx-auto px-4 py-6">
           {archivedComplaints.length === 0 ? (
             <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-gray-300">
               <Inbox className="h-14 w-14 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 font-medium">No archived complaints</p>
-              <p className="text-gray-400 text-sm mt-1">Resolved complaints will appear here</p>
+              <p className="text-gray-500 font-medium">
+                No archived complaints
+              </p>
+              <p className="text-gray-400 text-sm mt-1">
+                Resolved complaints will appear here
+              </p>
             </div>
           ) : (
             <div className="space-y-4">
-              {archivedComplaints.map(c => {
+              {archivedComplaints.map((c) => {
                 const sc = getStatusConfig(c.status);
                 return (
-                  <div key={c.id} className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+                  <div
+                    key={c.id}
+                    className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm"
+                  >
                     <div className="flex items-start justify-between mb-2">
-                      <h3 className="font-semibold text-gray-900">{c.subject}</h3>
-                      <span className={`flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-medium border ${sc.color}`}>
-                        {sc.icon}<span className="ml-1">{c.status}</span>
+                      <h3 className="font-semibold text-gray-900">
+                        {c.subject}
+                      </h3>
+                      <span
+                        className={`flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-medium border ${sc.color}`}
+                      >
+                        {sc.icon}
+                        <span className="ml-1">{c.status}</span>
                       </span>
                     </div>
-                    <p className="text-sm text-gray-500 line-clamp-2 mb-3">{c.description}</p>
+                    <p className="text-sm text-gray-500 line-clamp-2 mb-3">
+                      {c.description}
+                    </p>
                     {c.adminResponse && (
                       <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                        <p className="text-xs font-medium text-blue-700 mb-1">Admin Response:</p>
-                        <p className="text-sm text-blue-800">{c.adminResponse}</p>
+                        <p className="text-xs font-medium text-blue-700 mb-1">
+                          Admin Response:
+                        </p>
+                        <p className="text-sm text-blue-800">
+                          {c.adminResponse}
+                        </p>
                       </div>
                     )}
-                    <p className="text-xs text-gray-400 mt-3">Updated: {new Date(c.updatedAt).toLocaleDateString()}</p>
+                    <p className="text-xs text-gray-400 mt-3">
+                      Updated: {new Date(c.updatedAt).toLocaleDateString()}
+                    </p>
                   </div>
                 );
               })}
@@ -120,108 +206,178 @@ const StudentDashboard: React.FC = () => {
   }
 
   // ── View Complaint ──
-  if (currentView === 'view-complaint' && selectedComplaint) {
+  if (currentView === "view-complaint" && selectedComplaint) {
     if (selectedComplaint.isNotification) {
       markNotificationAsRead(selectedComplaint.id);
       loadComplaints();
     }
     const sc = getStatusConfig(selectedComplaint.status);
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-[#b1c1e2]">
         <div className="bg-white border-b border-gray-200 px-4 py-4 sticky top-0 z-10">
           <div className="max-w-3xl mx-auto flex items-center space-x-3">
-            <button onClick={() => { setCurrentView('dashboard'); setSelectedComplaint(null); }} className="p-2 hover:bg-gray-100 rounded-lg text-gray-500">
+            <button
+              onClick={() => {
+                setCurrentView("dashboard");
+                setSelectedComplaint(null);
+              }}
+              className="p-2 hover:bg-gray-100 rounded-lg text-gray-500"
+            >
               <ArrowLeft className="h-5 w-5" />
             </button>
             <div>
-              <h1 className="text-base font-semibold text-gray-900 line-clamp-1">{selectedComplaint.subject}</h1>
-              <p className="text-xs text-gray-400">ID: #{selectedComplaint.id}</p>
+              <h1 className="text-base font-semibold text-gray-900 line-clamp-1">
+                {selectedComplaint.subject}
+              </h1>
+              <p className="text-xs text-gray-400">
+                ID: #{selectedComplaint.id}
+              </p>
             </div>
           </div>
         </div>
 
         <div className="max-w-3xl mx-auto px-4 py-6 space-y-4">
           {/* Status Banner */}
-          <div className={`flex items-center space-x-3 px-4 py-3 rounded-xl border ${sc.color}`}>
+          <div
+            className={`flex items-center space-x-3 px-4 py-3 rounded-xl border ${sc.color}`}
+          >
             <span className={`w-2.5 h-2.5 rounded-full ${sc.dot} shrink-0`} />
             <div>
-              <p className="text-sm font-semibold">Status: {selectedComplaint.status}</p>
-              <p className="text-xs opacity-75">Last updated: {new Date(selectedComplaint.updatedAt).toLocaleDateString()}</p>
+              <p className="text-sm font-semibold">
+                Status: {selectedComplaint.status}
+              </p>
+              <p className="text-xs opacity-75">
+                Last updated:{" "}
+                {new Date(selectedComplaint.updatedAt).toLocaleDateString()}
+              </p>
             </div>
           </div>
 
           {/* Details Card */}
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-100 bg-gray-50">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Complaint Details</p>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                Complaint Details
+              </p>
             </div>
             <div className="p-5 grid grid-cols-2 gap-4">
               <div className="flex items-start space-x-2">
                 <Building className="h-4 w-4 text-gray-400 mt-0.5 shrink-0" />
-                <div><p className="text-xs text-gray-400">Department</p><p className="text-sm font-medium text-gray-800">{selectedComplaint.department}</p></div>
+                <div>
+                  <p className="text-xs text-gray-400">Department</p>
+                  <p className="text-sm font-medium text-gray-800">
+                    {selectedComplaint.department}
+                  </p>
+                </div>
               </div>
               <div className="flex items-start space-x-2">
                 <Tag className="h-4 w-4 text-gray-400 mt-0.5 shrink-0" />
-                <div><p className="text-xs text-gray-400">Category</p><p className="text-sm font-medium text-gray-800">{selectedComplaint.category}</p></div>
+                <div>
+                  <p className="text-xs text-gray-400">Category</p>
+                  <p className="text-sm font-medium text-gray-800">
+                    {selectedComplaint.category}
+                  </p>
+                </div>
               </div>
               <div className="flex items-start space-x-2 col-span-2">
                 <Calendar className="h-4 w-4 text-gray-400 mt-0.5 shrink-0" />
-                <div><p className="text-xs text-gray-400">Submitted on</p><p className="text-sm font-medium text-gray-800">{new Date(selectedComplaint.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</p></div>
+                <div>
+                  <p className="text-xs text-gray-400">Submitted on</p>
+                  <p className="text-sm font-medium text-gray-800">
+                    {new Date(selectedComplaint.createdAt).toLocaleDateString(
+                      "en-IN",
+                      { day: "numeric", month: "long", year: "numeric" },
+                    )}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Description */}
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Your Complaint</p>
-            <p className="text-gray-700 leading-relaxed text-sm">{selectedComplaint.description}</p>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+              Your Complaint
+            </p>
+            <p className="text-gray-700 leading-relaxed text-sm">
+              {selectedComplaint.description}
+            </p>
           </div>
 
           {/* Attachments */}
-          {selectedComplaint.attachments && selectedComplaint.attachments.length > 0 && (
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center space-x-1">
-                <Paperclip className="h-3.5 w-3.5" /><span>Attachments ({selectedComplaint.attachments.length})</span>
-              </p>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {selectedComplaint.attachments.map((url, i) => {
-                  const isPdf = url.toLowerCase().endsWith('.pdf');
-                  return isPdf ? (
-                    <a key={i} href={url} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center space-x-2 p-3 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors">
-                      <FileText className="h-5 w-5 text-red-500 shrink-0" />
-                      <span className="text-xs text-red-700 truncate">{url.split('/').pop()}</span>
-                    </a>
-                  ) : (
-                    <a key={i} href={url} target="_blank" rel="noopener noreferrer">
-                      <img src={url} alt={`attachment-${i + 1}`}
-                        className="w-full h-28 object-cover rounded-lg border border-gray-200 hover:opacity-80 transition-opacity cursor-pointer"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).parentElement!.innerHTML =
-                            '<div class="w-full h-28 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 text-xs border">Image not found</div>';
-                        }} />
-                    </a>
-                  );
-                })}
+          {selectedComplaint.attachments &&
+            selectedComplaint.attachments.length > 0 && (
+              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center space-x-1">
+                  <Paperclip className="h-3.5 w-3.5" />
+                  <span>
+                    Attachments ({selectedComplaint.attachments.length})
+                  </span>
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {selectedComplaint.attachments.map((url, i) => {
+                    const isPdf = url.toLowerCase().endsWith(".pdf");
+                    return isPdf ? (
+                      <a
+                        key={i}
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center space-x-2 p-3 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
+                      >
+                        <FileText className="h-5 w-5 text-red-500 shrink-0" />
+                        <span className="text-xs text-red-700 truncate">
+                          {url.split("/").pop()}
+                        </span>
+                      </a>
+                    ) : (
+                      <a
+                        key={i}
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <img
+                          src={url}
+                          alt={`attachment-${i + 1}`}
+                          className="w-full h-28 object-cover rounded-lg border border-gray-200 hover:opacity-80 transition-opacity cursor-pointer"
+                          onError={(e) => {
+                            (
+                              e.target as HTMLImageElement
+                            ).parentElement!.innerHTML =
+                              '<div class="w-full h-28 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 text-xs border">Image not found</div>';
+                          }}
+                        />
+                      </a>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
           {/* Admin Response */}
           {selectedComplaint.adminResponse ? (
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
               <div className="flex items-center space-x-2 mb-3">
                 <MessageSquare className="h-4 w-4 text-blue-600" />
-                <p className="text-sm font-semibold text-blue-800">Response from Admin</p>
+                <p className="text-sm font-semibold text-blue-800">
+                  Response from Admin
+                </p>
               </div>
-              <p className="text-sm text-blue-800 leading-relaxed">{selectedComplaint.adminResponse}</p>
+              <p className="text-sm text-blue-800 leading-relaxed">
+                {selectedComplaint.adminResponse}
+              </p>
             </div>
           ) : (
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start space-x-3">
               <AlertCircle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm font-medium text-amber-800">Awaiting Response</p>
-                <p className="text-xs text-amber-600 mt-0.5">Your complaint has been received. Admin will respond soon.</p>
+                <p className="text-sm font-medium text-amber-800">
+                  Awaiting Response
+                </p>
+                <p className="text-xs text-amber-600 mt-0.5">
+                  Your complaint has been received. Admin will respond soon.
+                </p>
               </div>
             </div>
           )}
@@ -232,20 +388,21 @@ const StudentDashboard: React.FC = () => {
 
   // ── Main Dashboard ──
   return (
-    <div className="min-h-screen bg-gray-50">
-
+    <div className="min-h-screen bg-[#b1c1e2]">
       {/* Sticky Navbar */}
       <div className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <img src="/logo.svg" alt="logo" className="h-11 w-11 shrink-0" />
+              <img src="/logo.svg" alt="logo" className="h-12 w-12 shrink-0" />
               <div>
                 <h1 className="text-base sm:text-xl font-bold text-gray-900 leading-tight">
-                  Welcome, {authState.currentStudent.name}
+                  Welcome, {authState.currentStudent.name}<b>👋</b>
                 </h1>
-                <div className="flex items-center flex-wrap gap-2 mt-1">
-                  <span className="text-sm text-gray-500 font-mono">ID: {authState.currentStudent.id}</span>
+                {/* <div className="flex items-center flex-wrap gap-2 mt-1">
+                  <span className="text-sm text-gray-500 font-mono">
+                    ID: {authState.currentStudent.id}
+                  </span>
                   {authState.currentStudent.class && (
                     <span className="px-2.5 py-0.5 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">
                       {authState.currentStudent.class}
@@ -256,37 +413,71 @@ const StudentDashboard: React.FC = () => {
                       {authState.currentStudent.department}
                     </span>
                   )}
+                </div> */}
+
+                <div className="flex flex-wrap gap-2 mt-3">
+                  <span className="flex items-center px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-sm font-medium">
+                    🆔 {authState.currentStudent.id}
+                  </span>
+
+                  {authState.currentStudent.class && (
+                    <span className="flex items-center px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-sm font-medium">
+                      🎓 {authState.currentStudent.class}
+                    </span>
+                  )}
+
+                  {authState.currentStudent.department && (
+                    <span className="flex items-center px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm font-medium">
+                      🏫 {authState.currentStudent.department}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-2">
               {notifications.length > 0 && (
                 <button
-                  onClick={() => { setSelectedComplaint(notifications[0]); setCurrentView('view-complaint'); }}
+                  onClick={() => {
+                    setSelectedComplaint(notifications[0]);
+                    setCurrentView("view-complaint");
+                  }}
                   className="relative flex items-center px-3 py-2 bg-red-100 text-red-600 hover:bg-red-200 rounded-lg transition-colors text-sm font-semibold"
                 >
-                  <span className="animate-pulse hidden sm:inline">Updates ({notifications.length})</span>
+                  <span className="animate-pulse hidden sm:inline">
+                    Updates ({notifications.length})
+                  </span>
                   <span className="sm:hidden">🔔 {notifications.length}</span>
                 </button>
               )}
-              <button onClick={() => setCurrentView('new-complaint')}
-                className="flex items-center space-x-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-all shadow-md">
+              <button
+                onClick={() => setCurrentView("new-complaint")}
+                className="flex items-center space-x-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-all shadow-md"
+              >
                 <Plus className="h-4 w-4 shrink-0" />
                 <span className="hidden sm:inline">New Complaint</span>
                 <span className="sm:hidden">New</span>
               </button>
-              <button onClick={() => setCurrentView('history')}
-                className="flex items-center space-x-1.5 px-3 py-2.5 text-gray-600 hover:bg-gray-100 rounded-xl transition-colors text-sm font-medium" title="History">
+              <button
+                onClick={() => setCurrentView("history")}
+                className="flex items-center space-x-1.5 px-3 py-2.5 text-gray-600 hover:bg-gray-100 rounded-xl transition-colors text-sm font-medium"
+                title="History"
+              >
                 <FileText className="h-5 w-5" />
                 <span className="hidden sm:inline">History</span>
               </button>
-              <button onClick={() => navigate('/profile')}
-                className="flex items-center space-x-1.5 px-3 py-2.5 text-gray-600 hover:bg-gray-100 rounded-xl transition-colors text-sm font-medium" title="Profile">
+              <button
+                onClick={() => navigate("/profile")}
+                className="flex items-center space-x-1.5 px-3 py-2.5 text-gray-600 hover:bg-gray-100 rounded-xl transition-colors text-sm font-medium"
+                title="Profile"
+              >
                 <UserCircle className="h-5 w-5" />
                 <span className="hidden sm:inline">Profile</span>
               </button>
-              <button onClick={logout}
-                className="flex items-center space-x-1.5 px-3 py-2.5 text-red-500 hover:bg-red-50 rounded-xl transition-colors text-sm font-medium" title="Logout">
+              <button
+                onClick={logout}
+                className="flex items-center space-x-1.5 px-3 py-2.5 text-red-500 hover:bg-red-50 rounded-xl transition-colors text-sm font-medium"
+                title="Logout"
+              >
                 <LogOut className="h-5 w-5" />
                 <span className="hidden sm:inline">Logout</span>
               </button>
@@ -295,19 +486,143 @@ const StudentDashboard: React.FC = () => {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+      {/* <div className="bg-white shadow-md border-b border-gray-200 sticky top-0 z-40 backdrop-blur-md">
+        <div className="max-w-7xl mx-auto px-4 lg:px-8 py-4">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+            Left Section 
+            <div className="flex items-center gap-4">
+              <div className="h-14 w-14 rounded-2xl bg-white shadow-lg border flex items-center justify-center shrink-0">
+                <img src="/logo.svg" alt="logo" className="h-10 w-10" />
+              </div>
 
+              <div>
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+                  Welcome,
+                  <span className="text-blue-600">
+                    {" "}
+                    {authState.currentStudent.name}
+                  </span>
+                  👋
+                </h1>
+
+                <div className="flex flex-wrap gap-2 mt-3">
+                  <span className="flex items-center px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-sm font-medium">
+                    🆔 {authState.currentStudent.id}
+                  </span>
+
+                  {authState.currentStudent.class && (
+                    <span className="flex items-center px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-sm font-medium">
+                      🎓 {authState.currentStudent.class}
+                    </span>
+                  )}
+
+                  {authState.currentStudent.department && (
+                    <span className="flex items-center px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm font-medium">
+                      🏫 {authState.currentStudent.department}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            Right Section 
+
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+              {notifications.length > 0 && (
+                <button
+                  onClick={() => {
+                    setSelectedComplaint(notifications[0]);
+                    setCurrentView("view-complaint");
+                  }}
+                  className="relative flex flex-col items-center justify-center rounded-2xl border border-red-200 bg-red-50 hover:bg-red-100 transition-all px-4 py-3 shadow-sm"
+                >
+                  <span className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-600 text-white text-xs flex items-center justify-center animate-pulse">
+                    {notifications.length}
+                  </span>
+                  🔔
+                  <span className="text-xs font-semibold mt-1">Updates</span>
+                </button>
+              )}
+
+              <button
+                onClick={() => setCurrentView("new-complaint")}
+                className="flex flex-col items-center justify-center rounded-2xl bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg hover:scale-105 transition-all px-4 py-3"
+              >
+                <Plus className="h-5 w-5" />
+                <span className="text-xs mt-1 font-semibold">
+                  New Complaint
+                </span>
+              </button>
+
+              <button
+                onClick={() => setCurrentView("history")}
+                className="flex flex-col items-center justify-center rounded-2xl border hover:bg-gray-50 transition px-4 py-3"
+              >
+                <FileText className="h-5 w-5 text-gray-700" />
+                <span className="text-xs mt-1">History</span>
+              </button>
+
+              <button
+                onClick={() => navigate("/profile")}
+                className="flex flex-col items-center justify-center rounded-2xl border hover:bg-gray-50 transition px-4 py-3"
+              >
+                <UserCircle className="h-5 w-5 text-gray-700" />
+                <span className="text-xs mt-1">Profile</span>
+              </button>
+
+              <button
+                onClick={logout}
+                className="flex flex-col items-center justify-center rounded-2xl border border-red-200 hover:bg-red-50 text-red-600 transition px-4 py-3"
+              >
+                <LogOut className="h-5 w-5" />
+                <span className="text-xs mt-1">Logout</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>*/}
+
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-8">
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
-            { label: 'Total Complaints', value: stats.total, color: 'text-gray-900', bg: 'bg-white', icon: <FileText className="h-8 w-8 text-gray-400" /> },
-            { label: 'Pending', value: stats.pending, color: 'text-orange-600', bg: 'bg-orange-50', icon: <Clock className="h-8 w-8 text-orange-400" /> },
-            { label: 'In Progress', value: stats.inProgress, color: 'text-blue-600', bg: 'bg-blue-50', icon: <TrendingUp className="h-8 w-8 text-blue-400" /> },
-            { label: 'Resolved', value: stats.resolved, color: 'text-green-600', bg: 'bg-green-50', icon: <CheckCircle className="h-8 w-8 text-green-400" /> },
-          ].map(s => (
-            <div key={s.label} className={`${s.bg} rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center justify-between`}>
+            {
+              label: "Total Complaints",
+              value: stats.total,
+              color: "text-gray-900",
+              bg: "bg-white",
+              icon: <FileText className="h-8 w-8 text-gray-400" />,
+            },
+            {
+              label: "Pending",
+              value: stats.pending,
+              color: "text-orange-600",
+              bg: "bg-orange-50",
+              icon: <Clock className="h-8 w-8 text-orange-400" />,
+            },
+            {
+              label: "In Progress",
+              value: stats.inProgress,
+              color: "text-blue-600",
+              bg: "bg-blue-50",
+              icon: <TrendingUp className="h-8 w-8 text-blue-400" />,
+            },
+            {
+              label: "Resolved",
+              value: stats.resolved,
+              color: "text-green-600",
+              bg: "bg-green-50",
+              icon: <CheckCircle className="h-8 w-8 text-green-400" />,
+            },
+          ].map((s) => (
+            <div
+              key={s.label}
+              className={`${s.bg} rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center justify-between`}
+            >
               <div>
-                <p className="text-sm text-gray-500 font-medium mb-1">{s.label}</p>
+                <p className="text-sm text-gray-500 font-medium mb-1">
+                  {s.label}
+                </p>
                 <p className={`text-3xl font-bold ${s.color}`}>{s.value}</p>
               </div>
               {s.icon}
@@ -319,10 +634,14 @@ const StudentDashboard: React.FC = () => {
         {studentComplaints.length === 0 && (
           <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-10 text-white text-center shadow-lg">
             <div className="text-5xl mb-4">📝</div>
-            <h2 className="text-2xl font-bold mb-2">Submit Your First Complaint</h2>
-            <p className="text-blue-100 text-base mb-6">Have an issue? Let your department know. We'll get back to you.</p>
+            <h2 className="text-2xl font-bold mb-2">
+              Submit Your First Complaint
+            </h2>
+            <p className="text-blue-100 text-base mb-6">
+              Have an issue? Let your department know. We'll get back to you.
+            </p>
             <button
-              onClick={() => setCurrentView('new-complaint')}
+              onClick={() => setCurrentView("new-complaint")}
               className="bg-white text-blue-700 font-semibold px-8 py-3 rounded-xl hover:bg-blue-50 transition-colors text-base"
             >
               + New Complaint
@@ -335,14 +654,21 @@ const StudentDashboard: React.FC = () => {
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <input type="text" placeholder="Search complaints..." value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base shadow-sm" />
+              <input
+                type="text"
+                placeholder="Search complaints..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base shadow-sm"
+              />
             </div>
             <div className="relative">
               <Filter className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-                className="pl-11 pr-10 py-3 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none text-base shadow-sm w-full sm:w-48">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="pl-11 pr-10 py-3 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none text-base shadow-sm w-full sm:w-48"
+              >
                 <option value="all">All Status</option>
                 <option value="Pending">Pending</option>
                 <option value="In Progress">In Progress</option>
@@ -353,7 +679,7 @@ const StudentDashboard: React.FC = () => {
         )}
 
         {/* Complaints List */}
-        {studentComplaints.length > 0 && (
+        {/* {studentComplaints.length > 0 && (
           <div>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold text-gray-800">My Complaints <span className="text-gray-400 font-normal text-base">({filteredComplaints.length})</span></h2>
@@ -424,6 +750,198 @@ const StudentDashboard: React.FC = () => {
                             </button>
                           )}
                         </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )} */}
+
+        {studentComplaints.length > 0 && (
+          <div>
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-xl font-bold text-gray-900">
+                My Complaints
+                <span className="ml-2 px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-sm font-medium">
+                  {filteredComplaints.length} Total
+                </span>
+              </h2>
+            </div>
+
+            {isLoading ? (
+              <div className="text-center py-20 bg-white rounded-2xl border">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto"></div>
+              </div>
+            ) : filteredComplaints.length === 0 ? (
+              <div className="text-center py-20 bg-white rounded-2xl border">
+                <Search className="h-14 w-14 text-gray-300 mx-auto mb-4" />
+                <p className="text-lg font-semibold text-gray-700">
+                  No Complaints Found
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {filteredComplaints.map((c) => {
+                  const sc = getStatusConfig(c.status);
+
+                  return (
+                    <div
+                      key={c.id}
+                      onClick={() => {
+                        setSelectedComplaint(c);
+                        setCurrentView("view-complaint");
+                      }}
+                      className="bg-white border border-gray-200 rounded-2xl shadow-sm hover:shadow-lg hover:border-blue-300 transition-all duration-300 p-4 cursor-pointer"
+                    >
+                      {/* Header */}
+
+                      <div className="flex justify-between items-start">
+                        <div className="flex gap-3">
+                          <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center">
+                            <FileText className="w-6 h-6 text-blue-600" />
+                          </div>
+
+                          <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h3 className="text-lg font-bold text-gray-900">
+                                {c.subject}
+                              </h3>
+
+                              <span
+                                className={`px-3 py-1 rounded-full text-xs font-semibold border ${sc.color}`}
+                              >
+                                {c.status}
+                              </span>
+
+                              {c.isNotification && (
+                                <span className="px-3 py-1 rounded-full bg-red-100 text-red-600 border text-xs font-semibold animate-pulse">
+                                  🔴 New Update
+                                </span>
+                              )}
+                            </div>
+
+                            <p className="text-sm text-gray-500 mt-1">
+                              Complaint ID :
+                              <span className="font-semibold text-gray-700 ml-1">
+                                {c.studentId}
+                              </span>
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          {c.status === "Pending" && (
+                            <button
+                              onClick={async (e) => {
+                                e.stopPropagation();
+
+                                if (!window.confirm("Delete complaint?"))
+                                  return;
+
+                                try {
+                                  await deleteComplaint(c.id);
+                                } catch (err: any) {
+                                  alert(err.message);
+                                }
+                              }}
+                              className="p-2 rounded-lg hover:bg-red-50 text-red-500"
+                            >
+                              <Trash2 className="w-5 h-5" />
+                            </button>
+                          )}
+
+                          <ChevronRight className="w-5 h-5 text-gray-400" />
+                        </div>
+                      </div>
+
+                      {/* Info */}
+
+                      <div className="grid md:grid-cols-3 gap-3 mt-4">
+                        <div className="border rounded-xl px-4 py-3 flex items-center gap-3">
+                          <Building className="w-5 h-5 text-blue-600" />
+
+                          <div>
+                            <p className="text-xs text-gray-500">Department</p>
+
+                            <p className="font-semibold text-sm">
+                              {c.department}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="border rounded-xl px-4 py-3 flex items-center gap-3">
+                          <Tag className="w-5 h-5 text-green-600" />
+
+                          <div>
+                            <p className="text-xs text-gray-500">Category</p>
+
+                            <p className="font-semibold text-sm">
+                              {c.category}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="border rounded-xl px-4 py-3 flex items-center gap-3">
+                          <Paperclip className="w-5 h-5 text-purple-600" />
+
+                          <div>
+                            <p className="text-xs text-gray-500">Attachments</p>
+
+                            <p className="font-semibold text-sm">
+                              {c.attachments?.length || 0}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Description */}
+
+                      <div className="mt-4">
+                        <p className="text-sm font-semibold text-gray-600 mb-1">
+                          Description
+                        </p>
+
+                        <p className="text-sm text-gray-700 leading-6 line-clamp-2">
+                          {c.description}
+                        </p>
+                      </div>
+
+                      {/* Footer */}
+
+                      <div className="flex justify-between items-center border-t mt-4 pt-4">
+                        <div className="flex gap-6 text-sm text-gray-500 flex-wrap">
+                          <span className="flex items-center gap-2">
+                            <Calendar className="w-4 h-4" />
+                            {new Date(c.createdAt).toLocaleDateString()}
+                          </span>
+
+                          {c.updatedAt !== c.createdAt && (
+                            <span className="flex items-center gap-2">
+                              <Clock className="w-4 h-4" />
+                              {new Date(c.updatedAt).toLocaleDateString()}
+                            </span>
+                          )}
+                        </div>
+
+                        {c.adminResponse && (
+                          <div className="flex items-center gap-3 border border-blue-200 bg-blue-50 rounded-xl px-4 py-3 w-[520px]">
+                            <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center shadow-sm">
+                              <MessageSquare className="w-5 h-5 text-blue-600" />
+                            </div>
+
+                            <div>
+                              <h4 className="text-sm font-semibold text-blue-700">
+                                Admin Response
+                              </h4>
+
+                              <p className="text-sm text-blue-700 line-clamp-2">
+                                {c.adminResponse}
+                              </p>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
