@@ -1,16 +1,19 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Edit, Trash2, X } from "lucide-react";
-import { useStudents } from "../hooks/useStudents";
-import { useDepartments } from "../hooks/useDepartments";
 import { useClasses } from "../hooks/useClasses";
+import { useDepartments } from "../hooks/useDepartments";
+import { useStudents } from "../hooks/useStudents";
+
+type DepartmentRef = { _id: string; name: string; code: string };
+type ClassRef = { _id: string; name: string };
 
 interface Student {
   _id: string;
   name: string;
   email: string;
   studentId: string;
-  department: { _id: string; name: string; code: string } | string | null;
-  class?: { _id: string; name: string } | string | null;
+  department: DepartmentRef | string | null;
+  class?: ClassRef | string | null;
 }
 
 interface StudentCardProps {
@@ -19,61 +22,86 @@ interface StudentCardProps {
   onDelete?: () => void;
 }
 
+interface EditFormData {
+  name: string;
+  email: string;
+  department: string;
+  classId: string;
+  password: string;
+}
+
+const tableCellClass = "px-6 py-4 whitespace-nowrap text-sm text-gray-900";
+const inputClass =
+  "w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500";
+const secondaryButtonClass =
+  "flex-1 rounded-lg bg-gray-200 px-4 py-2 text-gray-700 transition-colors hover:bg-gray-300";
+
+const getDepartmentId = (department: Student["department"]) =>
+  department && typeof department === "object" ? department._id : department || "";
+
+const getDepartmentName = (department: Student["department"]) =>
+  department && typeof department === "object"
+    ? department.name
+    : department || "Not Assigned";
+
+const getClassId = (studentClass: Student["class"]) =>
+  studentClass && typeof studentClass === "object" ? studentClass._id : "";
+
+const getClassName = (studentClass: Student["class"]) =>
+  studentClass
+    ? typeof studentClass === "object"
+      ? studentClass.name
+      : studentClass
+    : null;
+
 const StudentCard: React.FC<StudentCardProps> = ({ student, onEdit, onDelete }) => {
+  const { updateStudent, deleteStudent, resetStudentPassword } = useStudents();
+  const { departments } = useDepartments();
+
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-
-  const deptId =
-    student.department && typeof student.department === "object"
-      ? student.department._id
-      : undefined;
-
-  const currentClassId =
-    student.class && typeof student.class === "object"
-      ? (student.class as { _id: string; name: string })._id
-      : "";
-
-  const [editFormData, setEditFormData] = useState({
+  const [editFormData, setEditFormData] = useState<EditFormData>(() => ({
     name: student.name,
     email: student.email,
-    studentId: student.studentId,
-    department: deptId || (student.department as string) || "",
-    classId: currentClassId,
+    department: getDepartmentId(student.department),
+    classId: getClassId(student.class),
     password: "",
-  });
+  }));
 
-  const { updateStudent, deleteStudent, resetStudentPassword } = useStudents();
-  const { departments } = useDepartments();
   const { classes } = useClasses(editFormData.department);
 
-  // Display helpers
-  const deptName =
-    student.department && typeof student.department === "object"
-      ? student.department.name
-      : student.department || "Not Assigned";
+  const departmentName = useMemo(
+    () => getDepartmentName(student.department),
+    [student.department],
+  );
 
-  const className =
-    student.class
-      ? typeof student.class === "object"
-        ? (student.class as { name: string }).name
-        : student.class
-      : null;
+  const className = useMemo(() => getClassName(student.class), [student.class]);
 
-  const handleEdit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const updateFormField = <K extends keyof EditFormData>(
+    field: K,
+    value: EditFormData[K],
+  ) => {
+    setEditFormData(current => ({ ...current, [field]: value }));
+  };
+
+  const handleEdit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     setIsLoading(true);
+
     try {
       await updateStudent(student._id, {
         name: editFormData.name,
         email: editFormData.email,
         class: editFormData.classId || null,
-      } as any);
-      if (editFormData.password) {
+      });
+
+      if (editFormData.password.trim()) {
         await resetStudentPassword(student._id, editFormData.password);
       }
+
       setShowEditModal(false);
-      if (onEdit) onEdit();
+      onEdit?.();
     } catch (error) {
       console.error("Error updating student:", error);
     } finally {
@@ -83,10 +111,11 @@ const StudentCard: React.FC<StudentCardProps> = ({ student, onEdit, onDelete }) 
 
   const handleDelete = async () => {
     setIsLoading(true);
+
     try {
       await deleteStudent(student._id);
       setShowDeleteModal(false);
-      if (onDelete) onDelete();
+      onDelete?.();
     } catch (error) {
       console.error("Error deleting student:", error);
     } finally {
@@ -96,42 +125,36 @@ const StudentCard: React.FC<StudentCardProps> = ({ student, onEdit, onDelete }) 
 
   return (
     <>
-      <tr className="hover:bg-[#B3CFE5]">
-        <td className="px-6 py-4 font-medium whitespace-nowrap text-sm font-medium text-gray-900">
-          {student.studentId}
-        </td>
-        <td className="px-6 py-4 font-medium whitespace-nowrap text-sm text-gray-900">
-          {student.name}
-        </td>
-        <td className="px-6 py-4 font-medium whitespace-nowrap text-sm text-gray-900">
-          {student.email}
-        </td>
-        <td className="px-6 py-4 font-medium whitespace-nowrap text-sm text-gray-900">
-          {deptName}
-        </td>
-        <td className="px-6 py-4 font-medium whitespace-nowrap text-sm text-gray-900">
+      <tr className="transition-colors hover:bg-[#B3CFE5]">
+        <td className={`${tableCellClass} font-medium`}>{student.studentId}</td>
+        <td className={`${tableCellClass} font-medium`}>{student.name}</td>
+        <td className={tableCellClass}>{student.email}</td>
+        <td className={tableCellClass}>{departmentName}</td>
+        <td className={tableCellClass}>
           {className ? (
-            <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
+            <span className="rounded-full bg-purple-100 px-2 py-1 text-xs font-medium text-purple-700">
               {className}
             </span>
           ) : (
-            <span className="px-2 py-1 bg-amber-50 text-amber-600 rounded-full text-xs border border-amber-200">
+            <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-xs text-amber-600">
               No Class
             </span>
           )}
         </td>
         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-          <div className="flex space-x-2">
+          <div className="flex items-center gap-2">
             <button
+              type="button"
               onClick={() => setShowEditModal(true)}
-              className="text-blue-600 hover:text-blue-800 p-1 rounded"
+              className="rounded p-1 text-blue-600 transition-colors hover:text-blue-800"
               title="Edit Student"
             >
               <Edit className="h-4 w-4" />
             </button>
             <button
+              type="button"
               onClick={() => setShowDeleteModal(true)}
-              className="text-red-600 hover:text-red-800 p-1 rounded"
+              className="rounded p-1 text-red-600 transition-colors hover:text-red-800"
               title="Delete Student"
             >
               <Trash2 className="h-4 w-4" />
@@ -140,102 +163,126 @@ const StudentCard: React.FC<StudentCardProps> = ({ student, onEdit, onDelete }) 
         </td>
       </tr>
 
-      {/* Edit Modal */}
       {showEditModal && (
         <tr>
           <td colSpan={6} className="p-0">
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-              <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
-                <div className="flex justify-between items-center p-6 border-b">
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+              <div className="w-full max-w-md rounded-xl bg-white shadow-xl">
+                <div className="flex items-center justify-between border-b p-6">
                   <h3 className="text-lg font-semibold text-gray-900">Edit Student</h3>
-                  <button onClick={() => setShowEditModal(false)} className="text-gray-400 hover:text-gray-500">
+                  <button
+                    type="button"
+                    onClick={() => setShowEditModal(false)}
+                    className="text-gray-400 transition-colors hover:text-gray-500"
+                    title="Close"
+                  >
                     <X className="h-5 w-5" />
                   </button>
                 </div>
 
-                <form onSubmit={handleEdit} className="p-6 space-y-4">
+                <form onSubmit={handleEdit} className="space-y-4 p-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                    <label className="mb-1 block text-sm font-medium text-gray-700">
+                      Full Name
+                    </label>
                     <input
                       type="text"
                       value={editFormData.name}
-                      onChange={e => setEditFormData({ ...editFormData, name: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      onChange={event => updateFormField("name", event.target.value)}
+                      className={inputClass}
                       required
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <label className="mb-1 block text-sm font-medium text-gray-700">
+                      Email
+                    </label>
                     <input
                       type="email"
                       value={editFormData.email}
-                      onChange={e => setEditFormData({ ...editFormData, email: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      onChange={event => updateFormField("email", event.target.value)}
+                      className={inputClass}
                       required
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                    <label className="mb-1 block text-sm font-medium text-gray-700">
+                      Department
+                    </label>
                     <select
                       value={editFormData.department}
-                      onChange={e => setEditFormData({ ...editFormData, department: e.target.value, classId: "" })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      onChange={event =>
+                        setEditFormData(current => ({
+                          ...current,
+                          department: event.target.value,
+                          classId: "",
+                        }))
+                      }
+                      className={inputClass}
                     >
                       <option value="">Select Department</option>
-                      {departments.map(d => (
-                        <option key={d._id} value={d._id}>{d.name} ({d.code})</option>
+                      {departments.map(department => (
+                        <option key={department._id} value={department._id}>
+                          {department.name} ({department.code})
+                        </option>
                       ))}
                     </select>
                   </div>
 
-                  {/* Class dropdown — dynamic based on selected department */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Class</label>
+                    <label className="mb-1 block text-sm font-medium text-gray-700">
+                      Class
+                    </label>
                     {classes.length > 0 ? (
                       <select
                         value={editFormData.classId}
-                        onChange={e => setEditFormData({ ...editFormData, classId: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        onChange={event => updateFormField("classId", event.target.value)}
+                        className={inputClass}
                       >
-                        <option value="">-- Select Class --</option>
-                        {classes.map(c => (
-                          <option key={c._id} value={c._id}>{c.name}</option>
+                        <option value="">Select Class</option>
+                        {classes.map(classItem => (
+                          <option key={classItem._id} value={classItem._id}>
+                            {classItem.name}
+                          </option>
                         ))}
                       </select>
                     ) : (
-                      <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-                        ⚠ या department साठी अजून class तयार केलेली नाही.
+                      <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-600">
+                        No classes have been created for this department yet.
                       </p>
                     )}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      New Password <span className="text-gray-400 font-normal">(रिकामे ठेवल्यास बदलणार नाही)</span>
+                    <label className="mb-1 block text-sm font-medium text-gray-700">
+                      New Password{" "}
+                      <span className="font-normal text-gray-400">
+                        (leave blank to keep current password)
+                      </span>
                     </label>
                     <input
                       type="password"
                       value={editFormData.password}
-                      onChange={e => setEditFormData({ ...editFormData, password: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      onChange={event => updateFormField("password", event.target.value)}
+                      className={inputClass}
                       placeholder="Enter new password"
                     />
                   </div>
 
-                  <div className="flex space-x-3 pt-2">
+                  <div className="flex gap-3 pt-2">
                     <button
                       type="submit"
                       disabled={isLoading}
-                      className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                      className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {isLoading ? "Updating..." : "Update Student"}
                     </button>
                     <button
                       type="button"
                       onClick={() => setShowEditModal(false)}
-                      className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300"
+                      className={secondaryButtonClass}
                     >
                       Cancel
                     </button>
@@ -247,27 +294,31 @@ const StudentCard: React.FC<StudentCardProps> = ({ student, onEdit, onDelete }) 
         </tr>
       )}
 
-      {/* Delete Modal */}
       {showDeleteModal && (
         <tr>
           <td colSpan={6} className="p-0">
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-              <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Delete Student</h3>
-                <p className="text-gray-600 mb-6">
-                  Are you sure you want to delete <strong>{student.name}</strong>? This action cannot be undone.
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+              <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+                <h3 className="mb-4 text-lg font-semibold text-gray-900">
+                  Delete Student
+                </h3>
+                <p className="mb-6 text-gray-600">
+                  Are you sure you want to delete <strong>{student.name}</strong>? This
+                  action cannot be undone.
                 </p>
-                <div className="flex space-x-3">
+                <div className="flex gap-3">
                   <button
+                    type="button"
                     onClick={handleDelete}
                     disabled={isLoading}
-                    className="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 disabled:opacity-50"
+                    className="flex-1 rounded-lg bg-red-600 px-4 py-2 text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {isLoading ? "Deleting..." : "Delete"}
                   </button>
                   <button
+                    type="button"
                     onClick={() => setShowDeleteModal(false)}
-                    className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300"
+                    className={secondaryButtonClass}
                   >
                     Cancel
                   </button>
